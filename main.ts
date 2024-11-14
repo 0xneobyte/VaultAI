@@ -78,6 +78,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 	private async handleMessage(message: string) {
 		if (!this.geminiService || !message.trim()) return;
 		
+		// Hide suggested actions when sending a message
+		this.toggleSuggestedActions(false);
+		
 		const userMessage: ChatMessage = {
 			role: 'user',
 			content: message,
@@ -95,7 +98,6 @@ export default class GeminiChatbotPlugin extends Plugin {
 		
 		try {
 			const response = await this.geminiService.sendMessage(message);
-			// Remove loading indicator
 			loadingEl.remove();
 			
 			const botMessage: ChatMessage = {
@@ -251,7 +253,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 			}
 		});
 		
-		// Add handlers for suggested actions
+		// Update action buttons handlers
 		const actionButtons = this.chatContainer.querySelectorAll('.action-button');
 		actionButtons.forEach(button => {
 			button.addEventListener('click', async () => {
@@ -265,20 +267,15 @@ export default class GeminiChatbotPlugin extends Plugin {
 				
 				const content = await this.app.vault.read(activeFile);
 				
-				// Hide the chat container first
-				this.chatContainer.style.display = 'none';
+				// Hide suggested actions when selecting an action
+				this.toggleSuggestedActions(false);
 				
-				// Then process the action
 				switch(action) {
 					case 'Summarize this page':
-						setTimeout(() => {
-							this.chatContainer.style.display = 'flex';
-							this.handleMessage(`Please provide a concise summary of this content:\n${content}`);
-						}, 100);
+						this.handleMessage(`Please provide a concise summary of this content:\n${content}`);
 						break;
 						
 					case 'Ask about this page':
-						this.chatContainer.style.display = 'flex';
 						if (this.inputField) {
 							this.inputField.focus();
 							this.inputField.placeholder = 'Ask a question about this page...';
@@ -286,17 +283,11 @@ export default class GeminiChatbotPlugin extends Plugin {
 						break;
 						
 					case 'Find action items':
-						setTimeout(() => {
-							this.chatContainer.style.display = 'flex';
-							this.handleMessage(`Please analyze this content and list all action items, tasks, and to-dos:\n${content}`);
-						}, 100);
+						this.handleMessage(`Please analyze this content and list all action items, tasks, and to-dos:\n${content}`);
 						break;
 						
 					case 'Translate to':
-						setTimeout(() => {
-							this.chatContainer.style.display = 'flex';
-							this.showLanguageSelectionModal(content);
-						}, 100);
+						this.showLanguageSelectionModal(content);
 						break;
 				}
 			});
@@ -327,9 +318,11 @@ export default class GeminiChatbotPlugin extends Plugin {
 		this.chatContainer.style.display = isVisible ? 'none' : 'flex';
 		
 		if (!isVisible) {
+			// Show suggested actions when opening chat
+			this.toggleSuggestedActions(true);
 			// Position the chat container just above the icon
-			this.chatContainer.style.bottom = '80px'; // Fixed position from bottom
-			this.chatContainer.style.right = '20px';  // Fixed position from right
+			this.chatContainer.style.bottom = '80px';
+			this.chatContainer.style.right = '20px';
 		}
 	}
 	
@@ -352,6 +345,14 @@ export default class GeminiChatbotPlugin extends Plugin {
 	
 	public decryptApiKey(encryptedKey: string): string {
 		return atob(encryptedKey).split('').reverse().join('');
+	}
+	
+	// Add this method to handle showing/hiding suggested actions
+	private toggleSuggestedActions(show: boolean) {
+		const suggestedActions = this.chatContainer.querySelector('.suggested-actions') as HTMLElement;
+		if (suggestedActions) {
+			suggestedActions.style.display = show ? 'block' : 'none';
+		}
 	}
 }
 
