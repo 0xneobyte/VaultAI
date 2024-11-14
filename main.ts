@@ -35,6 +35,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 	private geminiService: GeminiService | null = null;
 	private messagesContainer: HTMLElement | null = null;
 	private inputField: HTMLTextAreaElement | null = null;
+	private currentFileContent: string | null = null;
 	
 	async onload() {
 		await this.loadSettings();
@@ -258,21 +259,18 @@ export default class GeminiChatbotPlugin extends Plugin {
 		actionButtons.forEach(button => {
 			button.addEventListener('click', async () => {
 				const action = button.textContent?.trim();
-				const activeFile = this.app.workspace.getActiveFile();
 				
-				if (!activeFile) {
+				if (!this.currentFileContent) {
 					this.addErrorMessage('No active file selected');
 					return;
 				}
-				
-				const content = await this.app.vault.read(activeFile);
 				
 				// Hide suggested actions when selecting an action
 				this.toggleSuggestedActions(false);
 				
 				switch(action) {
 					case 'Summarize this page':
-						this.handleMessage(`Please provide a concise summary of this content:\n${content}`);
+						this.handleMessage(`Please provide a concise summary of this content:\n${this.currentFileContent}`);
 						break;
 						
 					case 'Ask about this page':
@@ -283,11 +281,11 @@ export default class GeminiChatbotPlugin extends Plugin {
 						break;
 						
 					case 'Find action items':
-						this.handleMessage(`Please analyze this content and list all action items, tasks, and to-dos:\n${content}`);
+						this.handleMessage(`Please analyze this content and list all action items, tasks, and to-dos:\n${this.currentFileContent}`);
 						break;
 						
 					case 'Translate to':
-						this.showLanguageSelectionModal(content);
+						this.showLanguageSelectionModal(this.currentFileContent);
 						break;
 				}
 			});
@@ -318,9 +316,17 @@ export default class GeminiChatbotPlugin extends Plugin {
 		this.chatContainer.style.display = isVisible ? 'none' : 'flex';
 		
 		if (!isVisible) {
+			// Get active file when opening chat
+			const activeFile = this.app.workspace.getActiveFile();
+			if (activeFile) {
+				// Store the active file content for use in suggested actions
+				this.app.vault.read(activeFile).then(content => {
+					this.currentFileContent = content;
+				});
+			}
+			
 			// Show suggested actions when opening chat
 			this.toggleSuggestedActions(true);
-			// Position the chat container just above the icon
 			this.chatContainer.style.bottom = '80px';
 			this.chatContainer.style.right = '20px';
 		}
