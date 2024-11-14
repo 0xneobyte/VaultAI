@@ -53,6 +53,17 @@ export default class GeminiChatbotPlugin extends Plugin {
 		
 		// Add chat container
 		this.addChatContainer();
+		
+		// Restore chat history
+		this.restoreChatHistory();
+	}
+	
+	private restoreChatHistory() {
+		if (!this.messagesContainer) return;
+		
+		this.settings.chatHistory.forEach(message => {
+			this.addMessageToChat(message);
+		});
 	}
 	
 	public initializeGeminiService() {
@@ -78,8 +89,17 @@ export default class GeminiChatbotPlugin extends Plugin {
 		this.addMessageToChat(userMessage);
 		this.settings.chatHistory.push(userMessage);
 		
+		// Add loading indicator
+		const loadingEl = document.createElement('div');
+		loadingEl.addClass('gemini-message-loading');
+		loadingEl.textContent = 'Thinking...';
+		this.messagesContainer?.appendChild(loadingEl);
+		
 		try {
 			const response = await this.geminiService.sendMessage(message);
+			// Remove loading indicator
+			loadingEl.remove();
+			
 			const botMessage: ChatMessage = {
 				role: 'bot',
 				content: response,
@@ -90,6 +110,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 			this.settings.chatHistory.push(botMessage);
 			await this.saveSettings();
 		} catch (error) {
+			loadingEl.remove();
 			this.addErrorMessage('Failed to get response from Gemini');
 		}
 	}
@@ -162,6 +183,8 @@ export default class GeminiChatbotPlugin extends Plugin {
 				</div>
 				<div class="bot-greeting">Hi Neo xD! How can I help you today?</div>
 			</div>
+
+			<div class="gemini-chat-messages"></div>
 
 			<div class="suggested-actions">
 				<h3>Suggested</h3>

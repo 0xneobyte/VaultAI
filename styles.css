@@ -225,3 +225,19 @@ If your plugin does not need CSS, delete this file.
 .password-toggle:hover {
     opacity: 0.8;
 }
+
+.gemini-message-loading {
+    align-self: center;
+    color: var(--text-muted);
+    font-size: 0.9em;
+    padding: 8px 12px;
+    background-color: var(--background-modifier-form-field);
+    border-radius: 12px;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
