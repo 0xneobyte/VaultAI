@@ -32,8 +32,6 @@ export default class GeminiChatbotPlugin extends Plugin {
 	settings: GeminiChatbotSettings;
 	chatIcon: HTMLElement;
 	chatContainer: HTMLElement;
-	isDragging = false;
-	dragOffset: { x: number; y: number } = { x: 0, y: 0 };
 	private geminiService: GeminiService | null = null;
 	private messagesContainer: HTMLElement | null = null;
 	private inputField: HTMLTextAreaElement | null = null;
@@ -141,17 +139,10 @@ export default class GeminiChatbotPlugin extends Plugin {
 			<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
 		</svg>`;
 		
-		// Set initial position
-		this.chatIcon.style.left = `${this.settings.floatingPosition.x}px`;
-		this.chatIcon.style.bottom = `${this.settings.floatingPosition.y}px`;
-		
 		// Add click handler
 		this.chatIcon.addEventListener('click', () => {
 			this.toggleChatContainer();
 		});
-		
-		// Add drag functionality
-		this.addDragBehavior();
 		
 		document.body.appendChild(this.chatIcon);
 	}
@@ -274,21 +265,38 @@ export default class GeminiChatbotPlugin extends Plugin {
 				
 				const content = await this.app.vault.read(activeFile);
 				
+				// Hide the chat container first
+				this.chatContainer.style.display = 'none';
+				
+				// Then process the action
 				switch(action) {
 					case 'Summarize this page':
-						this.handleMessage(`Please summarize:\n${content}`);
+						setTimeout(() => {
+							this.chatContainer.style.display = 'flex';
+							this.handleMessage(`Please provide a concise summary of this content:\n${content}`);
+						}, 100);
 						break;
+						
 					case 'Ask about this page':
+						this.chatContainer.style.display = 'flex';
 						if (this.inputField) {
 							this.inputField.focus();
 							this.inputField.placeholder = 'Ask a question about this page...';
 						}
 						break;
+						
 					case 'Find action items':
-						this.handleMessage(`Find all action items in:\n${content}`);
+						setTimeout(() => {
+							this.chatContainer.style.display = 'flex';
+							this.handleMessage(`Please analyze this content and list all action items, tasks, and to-dos:\n${content}`);
+						}, 100);
 						break;
+						
 					case 'Translate to':
-						this.showLanguageSelectionModal(content);
+						setTimeout(() => {
+							this.chatContainer.style.display = 'flex';
+							this.showLanguageSelectionModal(content);
+						}, 100);
 						break;
 				}
 			});
@@ -314,44 +322,14 @@ export default class GeminiChatbotPlugin extends Plugin {
 		}).open();
 	}
 	
-	private addDragBehavior() {
-		this.chatIcon.addEventListener('mousedown', (e: MouseEvent) => {
-			this.isDragging = true;
-			const rect = this.chatIcon.getBoundingClientRect();
-			this.dragOffset.x = e.clientX - rect.left;
-			this.dragOffset.y = e.clientY - rect.top;
-			
-			document.addEventListener('mousemove', this.handleDrag);
-			document.addEventListener('mouseup', this.handleDragEnd);
-		});
-	}
-	
-	private handleDrag = (e: MouseEvent) => {
-		if (!this.isDragging) return;
-		
-		const x = e.clientX - this.dragOffset.x;
-		const y = e.clientY - this.dragOffset.y;
-		
-		this.chatIcon.style.left = `${x}px`;
-		this.chatIcon.style.top = `${y}px`;
-		
-		this.settings.floatingPosition = { x, y };
-		this.saveSettings();
-	}
-	
-	private handleDragEnd = () => {
-		this.isDragging = false;
-		document.removeEventListener('mousemove', this.handleDrag);
-		document.removeEventListener('mouseup', this.handleDragEnd);
-	}
-	
 	private toggleChatContainer() {
 		const isVisible = this.chatContainer.style.display !== 'none';
 		this.chatContainer.style.display = isVisible ? 'none' : 'flex';
 		
 		if (!isVisible) {
-			this.chatContainer.style.bottom = `${this.settings.floatingPosition.y + 60}px`;
-			this.chatContainer.style.right = `${20}px`;
+			// Position the chat container just above the icon
+			this.chatContainer.style.bottom = '80px'; // Fixed position from bottom
+			this.chatContainer.style.right = '20px';  // Fixed position from right
 		}
 	}
 	
