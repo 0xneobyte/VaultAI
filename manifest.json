@@ -1,11 +1,14 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
+	"id": "obsidian-gemini-chatbot",
+	"name": "Gemini Chatbot",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
-	"isDesktopOnly": false
+	"description": "An AI-powered chatbot using Google's Gemini API that provides a floating chat interface for note summarization, brainstorming, and more.",
+	"author": "Your Name",
+	"authorUrl": "https://github.com/yourusername",
+	"isDesktopOnly": false,
+	"fundingUrl": {
+		"Buy Me a Coffee": "https://buymeacoffee.com/yourusername",
+		"GitHub Sponsor": "https://github.com/sponsors/yourusername"
+	}
 }
