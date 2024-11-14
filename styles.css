@@ -6,3 +6,222 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+
+/* Floating Chat Icon */
+.gemini-chat-icon {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+    z-index: 1000;
+}
+
+.gemini-chat-icon:hover {
+    transform: scale(1.1);
+}
+
+/* Chat Container */
+.gemini-chat-container {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 380px;
+    height: 480px;
+    background-color: var(--background-primary);
+    border-radius: 12px;
+    border: 1px solid var(--background-modifier-border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+/* Chat Header */
+.gemini-chat-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-header-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.chat-header-controls button {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.chat-header-controls button:hover {
+    opacity: 1;
+}
+
+/* Bot Info Section */
+.bot-info {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.bot-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--background-modifier-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bot-greeting {
+    font-size: 1.1em;
+    font-weight: 500;
+}
+
+/* Suggested Actions */
+.suggested-actions {
+    padding: 0 16px;
+}
+
+.suggested-actions h3 {
+    font-size: 0.9em;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+
+.action-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.action-button:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.action-icon {
+    width: 20px;
+    height: 20px;
+    opacity: 0.7;
+}
+
+/* Chat Input */
+.chat-input-container {
+    margin-top: auto;
+    padding: 16px;
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+.chat-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 20px;
+    background-color: var(--background-primary);
+}
+
+.chat-input {
+    flex-grow: 1;
+    border: none;
+    background: none;
+    padding: 4px;
+    min-height: 24px;
+    max-height: 120px;
+    resize: none;
+}
+
+.chat-input:focus {
+    outline: none;
+}
+
+.input-actions {
+    display: flex;
+    gap: 8px;
+    opacity: 0.7;
+}
+
+.input-actions button {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+}
+
+.input-actions button:hover {
+    opacity: 1;
+}
+
+/* Add to existing styles.css */
+.gemini-chat-messages {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.gemini-message-user,
+.gemini-message-bot,
+.gemini-message-error {
+    max-width: 85%;
+    padding: 12px;
+    border-radius: 12px;
+    white-space: pre-wrap;
+}
+
+.gemini-message-user {
+    align-self: flex-end;
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border-bottom-right-radius: 4px;
+}
+
+.gemini-message-bot {
+    align-self: flex-start;
+    background-color: var(--background-modifier-form-field);
+    border-bottom-left-radius: 4px;
+}
+
+.gemini-message-error {
+    align-self: center;
+    background-color: var(--background-modifier-error);
+    color: var(--text-on-accent);
+    font-size: 0.9em;
+}
+
+/* Add to existing styles */
+.setting-item-control input[type="password"] {
+    font-family: monospace;
+    letter-spacing: 0.2em;
+    padding-right: 30px; /* Space for the toggle button */
+}
+
+.password-toggle:hover {
+    opacity: 0.8;
+}
