@@ -197,7 +197,7 @@ If your plugin does not need CSS, delete this file.
     display: flex;
     flex-direction: column;
     gap: 12px;
-    height: calc(100% - 180px);
+    max-height: calc(100% - 140px);
 }
 
 .gemini-message-user,
@@ -217,9 +217,12 @@ If your plugin does not need CSS, delete this file.
 }
 
 .gemini-message-bot {
-    align-self: flex-start;
-    background-color: var(--background-modifier-form-field);
-    border-bottom-left-radius: 4px;
+    width: 100%;
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    margin: 4px 0;
+    overflow: hidden;
 }
 
 .gemini-message-error {
@@ -313,8 +316,14 @@ If your plugin does not need CSS, delete this file.
 .response-content {
     padding: 16px;
     color: var(--text-normal);
+    overflow-y: visible;
     overflow-x: hidden;
     word-wrap: break-word;
+}
+
+.response-content > * {
+    width: 100%;
+    margin: 8px 0;
 }
 
 .response-content pre {
@@ -322,49 +331,29 @@ If your plugin does not need CSS, delete this file.
     padding: 12px;
     border-radius: 4px;
     overflow-x: auto;
-    margin: 8px 0;
     white-space: pre-wrap;
-}
-
-.response-content code {
-    font-family: var(--font-monospace);
-    font-size: 0.9em;
-    padding: 2px 4px;
-    background: var(--background-secondary);
-    border-radius: 3px;
+    width: 100%;
 }
 
 .response-content ul,
 .response-content ol {
-    padding-left: 1.5em;
+    width: 100%;
+    padding-left: 24px;
     margin: 8px 0;
-}
-
-.response-content h1,
-.response-content h2,
-.response-content h3,
-.response-content h4,
-.response-content h5,
-.response-content h6 {
-    margin: 16px 0 8px 0;
-    line-height: 1.4;
-}
-
-.response-content p {
-    margin: 8px 0;
-    line-height: 1.6;
 }
 
 .response-content table {
-    border-collapse: collapse;
     width: 100%;
+    border-collapse: collapse;
     margin: 8px 0;
+    display: table;
 }
 
 .response-content th,
 .response-content td {
     border: 1px solid var(--background-modifier-border);
     padding: 6px 8px;
+    text-align: left;
 }
 
 .response-content img {
