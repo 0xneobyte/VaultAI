@@ -1164,12 +1164,23 @@ export default class GeminiChatbotPlugin extends Plugin {
 	private addResizeFunctionality(handle: HTMLElement) {
 		let isResizing = false;
 		let startWidth: number;
+		let startHeight: number;
 		let startX: number;
+		let startY: number;
+		let startBottom: number;
+		let startRight: number;
 
 		handle.addEventListener('mousedown', (e: MouseEvent) => {
 			isResizing = true;
 			startWidth = this.chatContainer.offsetWidth;
+			startHeight = this.chatContainer.offsetHeight;
 			startX = e.clientX;
+			startY = e.clientY;
+			
+			// Store the original bottom and right positions
+			const rect = this.chatContainer.getBoundingClientRect();
+			startBottom = window.innerHeight - rect.bottom;
+			startRight = window.innerWidth - rect.right;
 
 			// Add event listeners
 			document.addEventListener('mousemove', handleMouseMove);
@@ -1182,15 +1193,27 @@ export default class GeminiChatbotPlugin extends Plugin {
 		const handleMouseMove = (e: MouseEvent) => {
 			if (!isResizing) return;
 
-			// Calculate new width (expanding leftward)
+			// Calculate new dimensions (expanding leftward and upward)
 			const deltaX = startX - e.clientX;
+			const deltaY = startY - e.clientY;
+			
 			const newWidth = Math.min(
 				Math.max(startWidth + deltaX, 380), // Minimum width: 380px
 				800 // Maximum width: 800px
 			);
+			
+			const newHeight = Math.min(
+				Math.max(startHeight + deltaY, 500), // Minimum height: 500px
+				800 // Maximum height: 800px
+			);
 
-			// Update container width
+			// Update container dimensions
 			this.chatContainer.style.width = `${newWidth}px`;
+			this.chatContainer.style.height = `${newHeight}px`;
+			
+			// Maintain position relative to bottom-right corner
+			this.chatContainer.style.bottom = `${startBottom}px`;
+			this.chatContainer.style.right = `${startRight}px`;
 		};
 
 		const stopResize = () => {

@@ -33,9 +33,11 @@ If your plugin does not need CSS, delete this file.
 	z-index: 1000;
 	overflow: hidden;
 	animation: slideIn 0.3s ease-out;
-	resize: horizontal;
+	resize: both;
 	min-width: 380px;
 	max-width: 800px;
+	min-height: 500px;
+	max-height: 800px;
 	transform-origin: bottom right;
 }
 
