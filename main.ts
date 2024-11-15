@@ -94,12 +94,12 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 		// Build context more efficiently
 		let contextMessage = message
-		let context = ''
+		let context = ""
 
 		// Add referenced file content if any
 		const fileReferences = message.match(/@([^\s]+)/g)
 		if (fileReferences) {
-			contextMessage = message.replace(/@([^\s]+)/g, '').trim()
+			contextMessage = message.replace(/@([^\s]+)/g, "").trim()
 			for (const ref of fileReferences) {
 				const fileName = ref.slice(1)
 				const fileContent = this.referencedFiles?.get(fileName)
@@ -121,24 +121,22 @@ export default class GeminiChatbotPlugin extends Plugin {
 		}
 
 		// Prepare the final message
-		const finalMessage = context
-			? `${context}\n\nUser question: ${contextMessage}`
-			: contextMessage
+		const finalMessage = context ? `${context}\n\nUser question: ${contextMessage}` : contextMessage
 
 		const userMessage: ChatMessage = {
-			role: 'user',
+			role: "user",
 			content: finalMessage,
-			timestamp: Date.now()
+			timestamp: Date.now(),
 		}
 
 		await this.addMessageToChat({
 			...userMessage,
-			content: contextMessage
+			content: contextMessage,
 		})
 
 		// Add typing indicator
-		const typingIndicator = document.createElement('div')
-		typingIndicator.addClass('typing-indicator')
+		const typingIndicator = document.createElement("div")
+		typingIndicator.addClass("typing-indicator")
 		typingIndicator.innerHTML = `
 			<span></span>
 			<span></span>
@@ -152,9 +150,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 			typingIndicator.remove()
 
 			const botMessage: ChatMessage = {
-				role: 'bot',
+				role: "bot",
 				content: response,
-				timestamp: Date.now()
+				timestamp: Date.now(),
 			}
 
 			await this.addMessageToChat(botMessage)
@@ -163,23 +161,23 @@ export default class GeminiChatbotPlugin extends Plugin {
 				if (this.currentSession.messages.length === 2) {
 					this.currentSession.title = this.generateSessionTitle(userMessage.content)
 				}
-				
+
 				this.settings.chatSessions = [
 					this.currentSession,
-					...this.settings.chatSessions.filter(s => s.id !== this.currentSession?.id)
+					...this.settings.chatSessions.filter((s) => s.id !== this.currentSession?.id),
 				]
-				
+
 				await this.saveSettings()
 			}
 		} catch (error) {
 			typingIndicator.remove()
-			
+
 			// Better error handling
 			let errorMessage = "Failed to get response from Gemini"
 			if (error instanceof Error) {
-				if (error.message.includes('429')) {
+				if (error.message.includes("429")) {
 					errorMessage = "Rate limit reached. Please wait a moment before trying again."
-				} else if (error.message.includes('quota')) {
+				} else if (error.message.includes("quota")) {
 					errorMessage = "API quota exceeded. Please try again later."
 				}
 			}
@@ -188,67 +186,59 @@ export default class GeminiChatbotPlugin extends Plugin {
 	}
 
 	private async addMessageToChat(message: ChatMessage) {
-		if (!this.messagesContainer) return;
+		if (!this.messagesContainer) return
 
-		const messageEl = document.createElement('div');
-		messageEl.addClass(`gemini-message-${message.role}`);
+		const messageEl = document.createElement("div")
+		messageEl.addClass(`gemini-message-${message.role}`)
 
-		if (message.role === 'bot') {
+		if (message.role === "bot") {
 			// Add copy button
-			const copyButton = messageEl.createEl('button', {
-				text: 'Copy to new note',
-				cls: 'copy-response-button',
-			});
-			
-			copyButton.addEventListener('click', async () => {
+			const copyButton = messageEl.createEl("button", {
+				text: "Copy to new note",
+				cls: "copy-response-button",
+			})
+
+			copyButton.addEventListener("click", async () => {
 				// Generate creative title based on content
-				const title = this.generateNoteTitle(message.content);
-				const file = await this.app.vault.create(
-					`${title}.md`,
-					message.content
-				);
-				const leaf = this.app.workspace.getLeaf(false);
-				await leaf.openFile(file);
-				new Notice('Response copied to new note!');
-			});
+				const title = this.generateNoteTitle(message.content)
+				const file = await this.app.vault.create(`${title}.md`, message.content)
+				const leaf = this.app.workspace.getLeaf(false)
+				await leaf.openFile(file)
+				new Notice("Response copied to new note!")
+			})
 
 			// Directly render markdown
-			await MarkdownRenderer.renderMarkdown(
-				message.content,
-				messageEl,
-				'',
-				this
-			);
+			await MarkdownRenderer.renderMarkdown(message.content, messageEl, "", this)
 		} else {
 			// For user messages, just show the visible part
-			const visibleContent = this.stripContextFromMessage(message.content);
-			messageEl.textContent = visibleContent;
+			const visibleContent = this.stripContextFromMessage(message.content)
+			messageEl.textContent = visibleContent
 		}
 
-		this.messagesContainer.appendChild(messageEl);
-		this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+		this.messagesContainer.appendChild(messageEl)
+		this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight
 
 		if (this.currentSession) {
-			this.currentSession.messages.push(message);
+			this.currentSession.messages.push(message)
 		}
 	}
 
 	// Add new method for typing animation
 	private async typeMessage(text: string, container: HTMLElement) {
 		// First render the markdown but keep it hidden
-		await MarkdownRenderer.renderMarkdown(text, container, '', this)
+		await MarkdownRenderer.renderMarkdown(text, container, "", this)
 		const elements = Array.from(container.children)
 		container.empty()
 
 		for (const element of elements) {
 			if (element instanceof HTMLElement) {
-				if (element.tagName === 'P') {
+				if (element.tagName === "P") {
 					// For paragraphs, type each character
-					const text = element.textContent || ''
-					const p = container.createEl('p')
+					const text = element.textContent || ""
+					const p = container.createEl("p")
 					for (const char of text) {
 						p.textContent += char
-						await new Promise(resolve => setTimeout(resolve, 10)) // Adjust speed here
+						await new Promise((resolve) => setTimeout(resolve, 10)) // Adjust speed here
 						if (this.messagesContainer) {
 							this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight
 						}
@@ -401,30 +391,30 @@ export default class GeminiChatbotPlugin extends Plugin {
 		})
 
 		// Simplify action buttons handlers
-		const actionButtons = this.chatContainer.querySelectorAll(".action-button");
+		const actionButtons = this.chatContainer.querySelectorAll(".action-button")
 		actionButtons.forEach((button) => {
 			button.addEventListener("click", () => {
-				if (!this.inputField) return;
+				if (!this.inputField) return
 
 				// Simply set the input value based on the action
 				if (button.textContent?.includes("Summarize")) {
-					this.inputField.value = "Can you summarize this note for me?";
+					this.inputField.value = "Can you summarize this note for me?"
 				} else if (button.textContent?.includes("Ask about")) {
-					this.inputField.value = "What is this note about?";
+					this.inputField.value = "What is this note about?"
 				} else if (button.textContent?.includes("Make a quiz")) {
-					this.inputField.value = "Can you create a quiz using this note?";
+					this.inputField.value = "Can you create a quiz using this note?"
 				} else if (button.textContent?.includes("Translate")) {
 					new LanguageSelectionModal(this.app, (language: string) => {
 						if (this.inputField) {
-							this.inputField.value = `Can you translate this note to ${language}?`;
+							this.inputField.value = `Can you translate this note to ${language}?`
 						}
-					}).open();
+					}).open()
 				}
 
 				// Focus the input
-				this.inputField.focus();
-			});
-		});
+				this.inputField.focus()
+			})
+		})
 
 		// Update history button handler
 		const historyButton = this.chatContainer.querySelector(".history-button")
@@ -485,10 +475,10 @@ export default class GeminiChatbotPlugin extends Plugin {
 		})
 
 		// Add @ button handler
-		const mentionButton = this.chatContainer.querySelector('.mention-button');
-		mentionButton?.addEventListener('click', () => {
-			this.showFileSelectionModal();
-		});
+		const mentionButton = this.chatContainer.querySelector(".mention-button")
+		mentionButton?.addEventListener("click", () => {
+			this.showFileSelectionModal()
+		})
 	}
 
 	private showLanguageSelectionModal(content: string) {
@@ -512,27 +502,22 @@ export default class GeminiChatbotPlugin extends Plugin {
 	}
 
 	private async toggleChatContainer() {
-		const isVisible = this.chatContainer.style.display !== 'none';
-		this.chatContainer.style.display = isVisible ? 'none' : 'flex';
-		
+		const isVisible = this.chatContainer.style.display !== "none"
+		this.chatContainer.style.display = isVisible ? "none" : "flex"
+
 		if (!isVisible) {
-			// Start new session
-			this.currentSession = this.createNewSession();
-			
-			// Show main chat view with welcome screen
-			this.showMainChatView();
-			this.toggleSuggestedActions(true);
-			
-			// Check for active file
-			const activeFile = this.app.workspace.getActiveFile();
+			this.chatContainer.classList.add("slideIn")
+			this.currentSession = this.createNewSession()
+			this.showMainChatView()
+			this.toggleSuggestedActions(true)
+
+			const activeFile = this.app.workspace.getActiveFile()
 			if (activeFile) {
-				// Store the content but don't show it in the UI
-				this.currentFileContent = await this.app.vault.read(activeFile);
-				// Update header with file name
-				this.updateChatHeader();
+				this.currentFileContent = await this.app.vault.read(activeFile)
+				this.updateChatHeader()
 			} else {
-				this.currentFileContent = null;
-				this.updateChatHeader();
+				this.currentFileContent = null
+				this.updateChatHeader()
 			}
 		}
 	}
@@ -568,12 +553,12 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 	private updateChatHeader() {
 		const activeFile = this.app.workspace.getActiveFile()
-		const headerEl = this.chatContainer.querySelector(".current-file")
+		const headerEl = this.chatContainer.querySelector(".current-file") as HTMLElement
 		if (headerEl && activeFile) {
 			headerEl.textContent = activeFile.basename
-			;(headerEl as HTMLElement).style.display = "block"
+			headerEl.style.display = "block"
 		} else if (headerEl) {
-			(headerEl as HTMLElement).style.display = "none"
+			headerEl.style.display = "none"
 		}
 	}
 
@@ -600,112 +585,164 @@ export default class GeminiChatbotPlugin extends Plugin {
 	// Add method to generate session title
 	private generateSessionTitle(firstMessage: string): string {
 		// Remove any markdown formatting
-		const cleanMessage = firstMessage.replace(/[#*`]/g, '').trim();
-		
+		const cleanMessage = firstMessage.replace(/[#*`]/g, "").trim()
+
 		// Check for specific patterns in the message
-		if (cleanMessage.toLowerCase().includes('summarize')) {
-			return "📝 Summary: " + this.extractDocumentName(cleanMessage);
+		if (cleanMessage.toLowerCase().includes("summarize")) {
+			return "📝 Summary: " + this.extractDocumentName(cleanMessage)
 		}
-		
-		if (cleanMessage.toLowerCase().includes('translate')) {
-			return "🌐 Translation: " + this.extractDocumentName(cleanMessage);
+
+		if (cleanMessage.toLowerCase().includes("translate")) {
+			return "🌐 Translation: " + this.extractDocumentName(cleanMessage)
 		}
-		
-		if (cleanMessage.toLowerCase().includes('action items') || 
-			cleanMessage.toLowerCase().includes('tasks')) {
-			return "✅ Tasks from: " + this.extractDocumentName(cleanMessage);
+
+		if (
+			cleanMessage.toLowerCase().includes("action items") ||
+			cleanMessage.toLowerCase().includes("tasks")
+		) {
+			return "✅ Tasks from: " + this.extractDocumentName(cleanMessage)
 		}
-		
+
 		// For questions
-		if (cleanMessage.endsWith('?')) {
-			return "❓ " + (cleanMessage.length > 40 
-				? cleanMessage.substring(0, 40) + "..."
-				: cleanMessage);
+		if (cleanMessage.endsWith("?")) {
+			return (
+				"❓ " + (cleanMessage.length > 40 ? cleanMessage.substring(0, 40) + "..." : cleanMessage)
+			)
 		}
-		
+
 		// For general chat, try to extract key topic
-		const keywords = this.extractKeywords(cleanMessage);
+		const keywords = this.extractKeywords(cleanMessage)
 		if (keywords) {
-			return "💭 Chat about " + keywords;
+			return "💭 Chat about " + keywords
 		}
-		
+
 		// Fallback to default with timestamp
-		return "💬 Chat from " + new Date().toLocaleTimeString([], { 
-			hour: '2-digit', 
-			minute: '2-digit' 
-		});
+		return (
+			"💬 Chat from " +
+			new Date().toLocaleTimeString([], {
+				hour: "2-digit",
+				minute: "2-digit",
+			})
+		)
 	}
 
 	private extractDocumentName(message: string): string {
 		// Try to find the document name in the message
-		const lines = message.split('\n');
+		const lines = message.split("\n")
 		if (lines.length > 1) {
 			// Take the first non-empty line after the first line
 			for (let i = 1; i < lines.length; i++) {
-				const line = lines[i].trim();
+				const line = lines[i].trim()
 				if (line) {
-					return line.length > 30 ? line.substring(0, 30) + "..." : line;
+					return line.length > 30 ? line.substring(0, 30) + "..." : line
 				}
 			}
 		}
-		return "Document";
+		return "Document"
 	}
 
 	private extractKeywords(message: string): string {
 		// Remove common words and get key topics
 		const commonWords = new Set([
-			'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i',
-			'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at',
-			'this', 'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her',
-			'she', 'or', 'an', 'will', 'my', 'one', 'all', 'would', 'there',
-			'their', 'what', 'so', 'up', 'out', 'if', 'about', 'who', 'get',
-			'which', 'go', 'me', 'please', 'could', 'can', 'just'
-		]);
-		
+			"the",
+			"be",
+			"to",
+			"of",
+			"and",
+			"a",
+			"in",
+			"that",
+			"have",
+			"i",
+			"it",
+			"for",
+			"not",
+			"on",
+			"with",
+			"he",
+			"as",
+			"you",
+			"do",
+			"at",
+			"this",
+			"but",
+			"his",
+			"by",
+			"from",
+			"they",
+			"we",
+			"say",
+			"her",
+			"she",
+			"or",
+			"an",
+			"will",
+			"my",
+			"one",
+			"all",
+			"would",
+			"there",
+			"their",
+			"what",
+			"so",
+			"up",
+			"out",
+			"if",
+			"about",
+			"who",
+			"get",
+			"which",
+			"go",
+			"me",
+			"please",
+			"could",
+			"can",
+			"just",
+		])
+
 		// Split message into words and filter
-		const words = message.toLowerCase()
-			.replace(/[^\w\s]/g, '')
+		const words = message
+			.toLowerCase()
+			.replace(/[^\w\s]/g, "")
 			.split(/\s+/)
-			.filter(word => !commonWords.has(word) && word.length > 2)
-			.slice(0, 3);
-		
+			.filter((word) => !commonWords.has(word) && word.length > 2)
+			.slice(0, 3)
+
 		if (words.length > 0) {
 			// Capitalize first letters
-			const formattedWords = words.map(word => 
-				word.charAt(0).toUpperCase() + word.slice(1)
-			);
-			return formattedWords.join(', ');
+			const formattedWords = words.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+			return formattedWords.join(", ")
 		}
-		
-		return '';
+
+		return ""
 	}
 
 	// Update showChatHistoryView method
 	private showChatHistoryView() {
-		if (!this.chatContainer) return;
+		if (!this.chatContainer) return
 
 		// Hide all other elements
 		const elementsToHide = [
-			'.bot-info',
-			'.suggested-actions',
-			'.chat-input-container',
-			'.gemini-chat-messages'
-			];
-		
-		elementsToHide.forEach(selector => {
-			const el = this.chatContainer.querySelector(selector);
-			if (el) (el as HTMLElement).style.display = 'none';
-		});
+			".bot-info",
+			".suggested-actions",
+			".chat-input-container",
+			".gemini-chat-messages",
+		]
+
+		elementsToHide.forEach((selector) => {
+			const el = this.chatContainer.querySelector(selector)
+			if (el) (el as HTMLElement).style.display = "none"
+		})
 
 		// Remove existing history view if any
-		const existingHistoryView = this.chatContainer.querySelector('.chat-history-view');
+		const existingHistoryView = this.chatContainer.querySelector(".chat-history-view")
 		if (existingHistoryView) {
-			existingHistoryView.remove();
+			existingHistoryView.remove()
 		}
 
 		// Create and show history view
-		const historyView = document.createElement('div');
-		historyView.addClass('chat-history-view');
+		const historyView = document.createElement("div")
+		historyView.addClass("chat-history-view")
 		historyView.innerHTML = `
 			<div class="chat-history-header">
 				<div class="back-button">
@@ -722,42 +759,44 @@ export default class GeminiChatbotPlugin extends Plugin {
 			<div class="chat-history-sections">
 				${this.renderChatHistorySections()}
 			</div>
-		`;
+		`
 
-		this.chatContainer.appendChild(historyView);
+		this.chatContainer.appendChild(historyView)
 
 		// Add event listeners
-		const backBtn = historyView.querySelector('.back-button');
-		backBtn?.addEventListener('click', () => {
-			historyView.remove();
-			this.showMainChatView();
-		});
+		const backBtn = historyView.querySelector(".back-button")
+		backBtn?.addEventListener("click", () => {
+			historyView.remove()
+			this.showMainChatView()
+		})
 
-		const newChatBtn = historyView.querySelector('.new-chat-button');
-		newChatBtn?.addEventListener('click', () => {
-			this.currentSession = this.createNewSession();
-			historyView.remove();
-			this.showMainChatView();
-		});
+		const newChatBtn = historyView.querySelector(".new-chat-button")
+		newChatBtn?.addEventListener("click", () => {
+			this.currentSession = this.createNewSession()
+			historyView.remove()
+			this.showMainChatView()
+		})
 
 		// Add click handlers for history items
-		this.attachHistoryItemListeners(historyView);
+		this.attachHistoryItemListeners(historyView)
 
-		const searchInput = historyView.querySelector('input');
-		searchInput?.addEventListener('input', (e) => {
-			const query = (e.target as HTMLInputElement).value;
-			this.filterChatHistory(query);
-		});
+		const searchInput = historyView.querySelector("input")
+		searchInput?.addEventListener("input", (e) => {
+			const query = (e.target as HTMLInputElement).value
+			this.filterChatHistory(query)
+		})
 	}
 
 	// Update renderHistorySection to include delete button
 	private renderHistorySection(title: string, sessions: ChatSession[]): string {
-		if (sessions.length === 0) return '';
+		if (sessions.length === 0) return ""
 
 		return `
 			<div class="history-section">
 				<h3>${title}</h3>
-				${sessions.map(session => `
+				${sessions
+					.map(
+						(session) => `
 					<div class="history-item" data-session-id="${session.id}">
 						<div class="history-item-icon">💬</div>
 						<div class="history-item-content">
@@ -770,55 +809,67 @@ export default class GeminiChatbotPlugin extends Plugin {
 							</svg>
 						</div>
 					</div>
-				`).join('')}
+				`,
+					)
+					.join("")}
 			</div>
-		`;
+		`
 	}
 
 	// Add method to handle chat deletion
 	private deleteChat(sessionId: string) {
-		this.settings.chatSessions = this.settings.chatSessions.filter(s => s.id !== sessionId);
-		this.saveSettings();
-		
-		// Refresh the history view
-		const historyView = this.chatContainer.querySelector('.chat-history-view');
-		if (historyView) {
-			const sectionsContainer = historyView.querySelector('.chat-history-sections');
-			if (sectionsContainer) {
-				sectionsContainer.innerHTML = this.renderChatHistorySections();
-				// Reattach event listeners for new elements
-				this.attachHistoryItemListeners(historyView as HTMLElement);
-			}
+		const historyItem = this.chatContainer.querySelector(
+			`.history-item[data-session-id="${sessionId}"]`,
+		)
+		if (historyItem) {
+			historyItem.classList.add("deleting")
+
+			// Wait for the animation to complete before removing the item
+			setTimeout(() => {
+				// Remove the session from settings
+				this.settings.chatSessions = this.settings.chatSessions.filter((s) => s.id !== sessionId)
+				this.saveSettings()
+
+				// Remove the item from the DOM
+				historyItem.remove()
+
+				// Re-render the chat history sections
+				const sectionsContainer = this.chatContainer.querySelector(".chat-history-sections")
+				if (sectionsContainer) {
+					sectionsContainer.innerHTML = this.renderChatHistorySections()
+					this.attachHistoryItemListeners(sectionsContainer as HTMLElement)
+				}
+			}, 300) // Match the duration of the fadeOut animation
 		}
 	}
 
 	// Add method to attach event listeners to history items
 	private attachHistoryItemListeners(historyView: HTMLElement) {
 		// Delete buttons
-		const deleteButtons = historyView.querySelectorAll('.delete-chat');
-		deleteButtons.forEach(btn => {
-			btn.addEventListener('click', (e) => {
-				e.stopPropagation(); // Prevent triggering the history item click
-				const sessionId = btn.getAttribute('data-session-id');
+		const deleteButtons = historyView.querySelectorAll(".delete-chat")
+		deleteButtons.forEach((btn) => {
+			btn.addEventListener("click", (e) => {
+				e.stopPropagation() // Prevent triggering the history item click
+				const sessionId = btn.getAttribute("data-session-id")
 				if (sessionId) {
-					this.deleteChat(sessionId);
+					this.deleteChat(sessionId)
 				}
-			});
-		});
+			})
+		})
 
 		// History items
-		const historyItems = historyView.querySelectorAll('.history-item');
-		historyItems.forEach(item => {
-			item.addEventListener('click', () => {
-				const sessionId = item.getAttribute('data-session-id');
-				const session = this.settings.chatSessions.find(s => s.id === sessionId);
+		const historyItems = historyView.querySelectorAll(".history-item")
+		historyItems.forEach((item) => {
+			item.addEventListener("click", () => {
+				const sessionId = item.getAttribute("data-session-id")
+				const session = this.settings.chatSessions.find((s) => s.id === sessionId)
 				if (session) {
-					this.currentSession = { ...session };
-					this.showMainChatView();
-					historyView.remove();
+					this.currentSession = { ...session }
+					this.showMainChatView()
+					historyView.remove()
 				}
-			});
-		});
+			})
+		})
 	}
 
 	// Add method to render chat history sections
@@ -861,46 +912,41 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 	// Update filterChatHistory method to fix search
 	private filterChatHistory(query: string) {
-		const historyView = this.chatContainer.querySelector('.chat-history-view');
-		if (!historyView) return;
+		const historyView = this.chatContainer.querySelector(".chat-history-view")
+		if (!historyView) return
 
-		const items = historyView.querySelectorAll('.history-item');
-		items.forEach(item => {
-			const title = item.querySelector('.history-item-title')?.textContent?.toLowerCase() || '';
+		const items = historyView.querySelectorAll(".history-item")
+		items.forEach((item) => {
+			const title = item.querySelector(".history-item-title")?.textContent?.toLowerCase() || ""
 			if (title.includes(query.toLowerCase())) {
-				(item as HTMLElement).style.display = 'flex';
+				(item as HTMLElement).style.display = "flex"
 			} else {
-				(item as HTMLElement).style.display = 'none';
+				(item as HTMLElement).style.display = "none"
 			}
-		});
+		})
 	}
 
 	// Update showMainChatView method
 	private showMainChatView() {
 		// Show all main chat elements
-		const elementsToShow = [
-			'.bot-info',
-			'.chat-input-container',
-			'.gemini-chat-messages'
-		];
-		
-		elementsToShow.forEach(selector => {
-			const el = this.chatContainer.querySelector(selector);
-			if (el) (el as HTMLElement).style.display = selector === '.gemini-chat-messages' ? 'flex' : 'block';
-		});
+		const elementsToShow = [".bot-info", ".chat-input-container", ".gemini-chat-messages"]
+
+		elementsToShow.forEach((selector) => {
+			const el = this.chatContainer.querySelector(selector)
+			if (el)
+				(el as HTMLElement).style.display = selector === ".gemini-chat-messages" ? "flex" : "block"
+		})
 
 		if (this.messagesContainer) {
-			this.messagesContainer.innerHTML = '';
+			this.messagesContainer.innerHTML = ""
 
 			// Only show messages if we have a current session
 			if (this.currentSession) {
-				this.currentSession.messages.forEach(message => 
-					this.addMessageToChat(message)
-				);
-				this.toggleSuggestedActions(false);
+				this.currentSession.messages.forEach((message) => this.addMessageToChat(message))
+				this.toggleSuggestedActions(false)
 			} else {
 				// Show suggested actions for new chat
-				this.toggleSuggestedActions(true);
+				this.toggleSuggestedActions(true)
 			}
 		}
 	}
@@ -908,124 +954,119 @@ export default class GeminiChatbotPlugin extends Plugin {
 	// Add this method to handle file selection
 	private async showFileSelectionModal() {
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const files = this.app.vault.getMarkdownFiles();
+		const files = this.app.vault.getMarkdownFiles()
 		const modal = new FileSelectionModal(this.app, async (file) => {
 			if (file && this.inputField) {
-				const content = await this.app.vault.read(file);
+				const content = await this.app.vault.read(file)
 				// Add file reference to input at cursor position
-				const cursorPos = this.inputField.selectionStart;
-				const currentValue = this.inputField.value;
-				const newValue = 
-					currentValue.slice(0, cursorPos) + 
-					`@${file.basename} ` + 
-					currentValue.slice(cursorPos);
-				this.inputField.value = newValue;
-				
+				const cursorPos = this.inputField.selectionStart
+				const currentValue = this.inputField.value
+				const newValue =
+					currentValue.slice(0, cursorPos) + `@${file.basename} ` + currentValue.slice(cursorPos)
+				this.inputField.value = newValue
+
 				// Store the file content to be used in the prompt
-				this.referencedFiles = this.referencedFiles || new Map();
-				this.referencedFiles.set(file.basename, content);
-				
-				this.inputField.focus();
+				this.referencedFiles = this.referencedFiles || new Map()
+				this.referencedFiles.set(file.basename, content)
+
+				this.inputField.focus()
 			}
-		});
-		modal.open();
+		})
+		modal.open()
 	}
 
 	// Add method to truncate content intelligently
 	private truncateContent(content: string): string {
 		if (content.length <= this.MAX_CONTEXT_LENGTH) {
-			return content;
+			return content
 		}
 
 		// Try to find a good breaking point
-		const relevantPart = content.slice(0, this.MAX_CONTEXT_LENGTH);
-		const lastParagraph = relevantPart.lastIndexOf('\n\n');
+		const relevantPart = content.slice(0, this.MAX_CONTEXT_LENGTH)
+		const lastParagraph = relevantPart.lastIndexOf("\n\n")
 		if (lastParagraph !== -1) {
-			return relevantPart.slice(0, lastParagraph) + '\n\n[Content truncated for length...]';
+			return relevantPart.slice(0, lastParagraph) + "\n\n[Content truncated for length...]"
 		}
 
-		return relevantPart + '[Content truncated for length...]';
+		return relevantPart + "[Content truncated for length...]"
 	}
 
 	// Add this method to format the bot's response
 	private async formatBotResponse(container: HTMLElement, content: string) {
 		// Create header with copy button
-		const headerDiv = container.createDiv('response-header');
-		const copyButton = headerDiv.createEl('button', {
-			text: 'Copy to new note',
-			cls: 'copy-response-button',
-		});
-		
-		copyButton.addEventListener('click', async () => {
+		const headerDiv = container.createDiv("response-header")
+		const copyButton = headerDiv.createEl("button", {
+			text: "Copy to new note",
+			cls: "copy-response-button",
+		})
+
+		copyButton.addEventListener("click", async () => {
 			// Create new note with response content
-			const fileName = `AI Response ${new Date().toLocaleString().replace(/[/:\\]/g, '-')}`;
-			const file = await this.app.vault.create(
-				`${fileName}.md`,
-				content
-			);
-			
+			const fileName = `AI Response ${new Date().toLocaleString().replace(/[/:\\]/g, "-")}`
+			const file = await this.app.vault.create(`${fileName}.md`, content)
+
 			// Open the new file
-			const leaf = this.app.workspace.getLeaf(false);
-			await leaf.openFile(file);
-			
+			const leaf = this.app.workspace.getLeaf(false)
+			await leaf.openFile(file)
+
 			// Show notification
-			new Notice('Response copied to new note!');
-		});
+			new Notice("Response copied to new note!")
+		})
 
 		// Create content container with proper formatting
-		const contentDiv = container.createDiv('response-content');
-		await MarkdownRenderer.renderMarkdown(content, contentDiv, '', this);
+		const contentDiv = container.createDiv("response-content")
+		await MarkdownRenderer.renderMarkdown(content, contentDiv, "", this)
 	}
 
 	// Add method to generate creative titles
 	private generateNoteTitle(content: string): string {
 		// Try to identify the type of content
-		const isQuiz = content.toLowerCase().includes('quiz') || 
-			content.toLowerCase().includes('question');
-		const isSummary = content.toLowerCase().includes('summary') || 
-			content.toLowerCase().includes('summarize');
-		const isTranslation = content.toLowerCase().includes('translation') || 
-			content.toLowerCase().includes('translated');
+		const isQuiz =
+			content.toLowerCase().includes("quiz") || content.toLowerCase().includes("question")
+		const isSummary =
+			content.toLowerCase().includes("summary") || content.toLowerCase().includes("summarize")
+		const isTranslation =
+			content.toLowerCase().includes("translation") || content.toLowerCase().includes("translated")
 
 		// Get current file name if available
-		const activeFile = this.app.workspace.getActiveFile();
-		const fileName = activeFile ? activeFile.basename : '';
+		const activeFile = this.app.workspace.getActiveFile()
+		const fileName = activeFile ? activeFile.basename : ""
 
 		// Generate title based on content type
 		if (isQuiz) {
-			return `Quiz - ${fileName}`;
+			return `Quiz - ${fileName}`
 		}
 		if (isSummary) {
-			return `Summary - ${fileName}`;
+			return `Summary - ${fileName}`
 		}
 		if (isTranslation) {
 			// Try to detect target language
-			const langMatch = content.match(/translated? to (\w+)/i);
-			const language = langMatch ? langMatch[1] : 'Other Language';
-			return `${language} Translation - ${fileName}`;
+			const langMatch = content.match(/translated? to (\w+)/i)
+			const language = langMatch ? langMatch[1] : "Other Language"
+			return `${language} Translation - ${fileName}`
 		}
 
 		// For other types, try to extract meaningful content
 		// First, try to get first heading
-		const headingMatch = content.match(/^#\s+(.+)$/m);
+		const headingMatch = content.match(/^#\s+(.+)$/m)
 		if (headingMatch) {
-			return `${headingMatch[1].trim()} - ${fileName}`;
+			return `${headingMatch[1].trim()} - ${fileName}`
 		}
 
 		// If no heading, try first line
-		const firstLine = content.split('\n')[0].trim();
+		const firstLine = content.split("\n")[0].trim()
 		if (firstLine && firstLine.length < 50) {
-			return `${firstLine} - ${fileName}`;
+			return `${firstLine} - ${fileName}`
 		}
 
 		// Fallback: Use file name with timestamp
-		const now = new Date();
-		return `${fileName} Notes - ${now.toLocaleString('en-US', { 
-			month: 'short', 
-			day: 'numeric',
-			hour: 'numeric',
-			minute: '2-digit'
-		})}`;
+		const now = new Date()
+		return `${fileName} Notes - ${now.toLocaleString("en-US", {
+			month: "short",
+			day: "numeric",
+			hour: "numeric",
+			minute: "2-digit",
+		})}`
 	}
 }
 

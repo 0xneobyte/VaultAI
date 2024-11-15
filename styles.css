@@ -7,641 +7,665 @@ If your plugin does not need CSS, delete this file.
 
 */
 
-/* Floating Chat Icon */
-.gemini-chat-icon {
-    position: fixed;
-    bottom: 40px !important;
-    right: 20px !important;
-    width: 40px;
-    height: 40px;
-    background-color: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: all 0.2s ease;
-    z-index: 1000;
-    padding: 8px;
+/* Import Poppins font */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap");
+
+/* Apply Poppins font to the entire chat panel */
+.gemini-chat-container,
+.gemini-chat-container * {
+	font-family: "Poppins", sans-serif;
 }
 
-.gemini-chat-icon:hover {
-    transform: scale(1.1);
-}
-
-/* Chat Container */
+/* Enhanced glassy look for the chat container */
 .gemini-chat-container {
-    position: fixed;
-    bottom: 100px !important;
-    right: 20px !important;
-    width: 380px;
-    height: 600px;
-    display: flex;
-    flex-direction: column;
-    background-color: var(--background-primary);
-    border-radius: 12px;
-    border: 1px solid var(--background-modifier-border);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    overflow: hidden;
+	position: fixed;
+	bottom: 100px !important;
+	right: 20px !important;
+	width: 420px;
+	height: 600px;
+	display: flex;
+	flex-direction: column;
+	background: rgba(255, 255, 255, 0.2);
+	backdrop-filter: blur(20px) saturate(180%);
+	border-radius: 12px;
+	border: 1px solid rgba(255, 255, 255, 0.4);
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+	z-index: 1000;
+	overflow: hidden;
+	animation: slideIn 0.3s ease-out;
 }
 
 @keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+	from {
+			transform: translateY(20px);
+			opacity: 0;
+	}
+	to {
+			transform: translateY(0);
+			opacity: 1;
+	}
 }
 
-/* Chat Header */
+/* Simplified header */
 .gemini-chat-header {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--background-modifier-border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+	padding: 12px 16px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	background: rgba(255, 255, 255, 0.1);
 }
 
 .chat-header-controls {
-    display: flex;
-    gap: 8px;
+	display: flex;
+	gap: 8px;
 }
 
 .chat-header-controls button {
-    background: none;
-    border: none;
-    padding: 4px;
-    cursor: pointer;
-    opacity: 0.7;
+	width: 32px;
+	height: 32px;
+	background: none;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	opacity: 0.7;
+	transition: all 0.2s;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .chat-header-controls button:hover {
-    opacity: 1;
+	opacity: 1;
+	background: rgba(0, 0, 0, 0.05);
 }
 
 /* Bot Info Section */
 .bot-info {
-    padding: 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
+	padding: 24px;
+	display: flex;
+	align-items: flex-start;
+	gap: 16px;
 }
 
 .bot-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background-color: var(--background-modifier-border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	background-color: var(--background-modifier-border);
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .bot-greeting {
-    font-size: 1.1em;
-    font-weight: 500;
+	font-size: 1.25em;
+	font-weight: 600;
+	margin-bottom: 24px;
 }
 
 /* Suggested Actions */
 .suggested-actions {
-    padding: 0 16px;
+	padding: 0 24px;
 }
 
 .suggested-actions h3 {
-    font-size: 0.9em;
-    color: var(--text-muted);
-    margin-bottom: 12px;
+	font-size: 0.875em;
+	color: var(--text-muted);
+	margin-bottom: 12px;
+	font-weight: 500;
 }
 
 .action-button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    margin-bottom: 8px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 16px;
+	margin-bottom: 8px;
+	border-radius: 8px;
+	cursor: pointer;
+	transition: all 0.2s;
+	border: 1px solid rgba(0, 0, 0, 0.1);
+	width: 100%;
+	background: transparent;
 }
 
 .action-button:hover {
-    background-color: var(--background-modifier-hover);
+	background-color: rgba(0, 0, 0, 0.05);
 }
 
 .action-icon {
-    width: 20px;
-    height: 20px;
-    opacity: 0.7;
+	width: 20px;
+	height: 20px;
+	fill: currentColor;
+	opacity: 0.7;
+	transition: opacity 0.2s;
 }
 
-/* Chat Input */
+.action-icon:hover {
+	opacity: 1;
+}
+
+/* Input Section */
 .chat-input-container {
-    margin-top: auto;
-    padding: 16px;
-    border-top: 1px solid var(--background-modifier-border);
+	margin-top: auto;
+	padding: 16px;
+	background: rgba(255, 255, 255, 0.5);
+	border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .chat-input-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 20px;
-    background-color: var(--background-primary);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px;
+	border: 1px solid rgba(0, 0, 0, 0.1);
+	border-radius: 8px;
+	background-color: rgba(255, 255, 255, 0.8);
 }
 
 .chat-input {
-    flex-grow: 1;
-    border: none;
-    background: none;
-    padding: 4px;
-    min-height: 24px;
-    max-height: 120px;
-    resize: none;
-}
-
-.chat-input:focus {
-    outline: none;
+	flex-grow: 1;
+	border: none;
+	background: none;
+	padding: 8px;
+	font-size: 0.95em;
+	min-height: 24px;
+	max-height: 80px;
+	resize: none;
 }
 
 .input-actions {
-    display: flex;
-    gap: 8px;
-    opacity: 0.7;
+	display: flex;
+	gap: 4px;
 }
 
 .input-actions button {
-    background: none;
-    border: none;
-    padding: 4px;
-    cursor: pointer;
+	width: 32px;
+	height: 32px;
+	background: none;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	opacity: 0.7;
+	transition: all 0.2s;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .input-actions button:hover {
-    opacity: 1;
+	opacity: 1;
+	background: rgba(0, 0, 0, 0.05);
 }
 
 /* Add to existing styles.css */
 .gemini-chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    min-height: 0;
-    height: calc(100% - 140px);
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	min-height: 0;
+	height: calc(100% - 140px);
+	background: rgba(255, 255, 255, 0.1);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .gemini-message-user,
 .gemini-message-bot,
 .gemini-message-error {
-    max-width: 85%;
-    padding: 12px;
-    border-radius: 12px;
-    overflow-wrap: break-word;
-    flex-shrink: 0;
+	max-width: 85%;
+	padding: 12px;
+	border-radius: 12px;
+	overflow-wrap: break-word;
+	flex-shrink: 0;
 }
 
 .gemini-message-user {
-    align-self: flex-end;
-    background-color: var(--interactive-accent);
-    color: var(--text-on-accent);
-    border-bottom-right-radius: 4px;
+	align-self: flex-end;
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border-bottom-right-radius: 4px;
 }
 
 .gemini-message-bot {
-    width: 100%;
-    background: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    padding: 16px;
-    position: relative;
-    flex-shrink: 0;
-    min-height: min-content;
+	width: 100%;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	padding: 16px;
+	position: relative;
+	flex-shrink: 0;
+	min-height: min-content;
 }
 
 .gemini-message-error {
-    align-self: center;
-    background-color: var(--background-modifier-error);
-    color: var(--text-on-accent);
-    font-size: 0.9em;
+	align-self: center;
+	background-color: var(--background-modifier-error);
+	color: var(--text-on-accent);
+	font-size: 0.9em;
 }
 
 /* Add to existing styles */
 .setting-item-control input[type="password"] {
-    font-family: monospace;
-    letter-spacing: 0.2em;
-    padding-right: 30px; /* Space for the toggle button */
+	font-family: monospace;
+	letter-spacing: 0.2em;
+	padding-right: 30px; /* Space for the toggle button */
 }
 
 .password-toggle:hover {
-    opacity: 0.8;
+	opacity: 0.8;
 }
 
 .gemini-message-loading {
-    align-self: center;
-    color: var(--text-muted);
-    font-size: 0.9em;
-    padding: 8px 12px;
-    background-color: var(--background-modifier-form-field);
-    border-radius: 12px;
-    animation: pulse 1.5s infinite;
+	align-self: center;
+	color: var(--text-muted);
+	font-size: 0.9em;
+	padding: 8px 12px;
+	background-color: var(--background-modifier-form-field);
+	border-radius: 12px;
+	animation: pulse 1.5s infinite;
 }
 
 @keyframes pulse {
-    0% { opacity: 0.6; }
-    50% { opacity: 1; }
-    100% { opacity: 0.6; }
+	0% {
+		opacity: 0.6;
+	}
+	50% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0.6;
+	}
 }
 
 /* File name in header */
 .current-file {
-    font-size: 0.9em;
-    color: var(--text-muted);
-    margin-right: auto;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 200px;
+	font-size: 0.9em;
+	color: var(--text-muted);
+	margin-right: auto;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 200px;
 }
 
 /* Typing animation */
 .typing-indicator {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 12px 16px;
-    background: var(--background-modifier-form-field);
-    border-radius: 12px;
-    margin-bottom: 8px;
-    width: fit-content;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 12px 16px;
+	background: var(--background-modifier-form-field);
+	border-radius: 12px;
+	margin-bottom: 8px;
+	width: fit-content;
 }
 
 .typing-indicator span {
-    width: 6px;
-    height: 6px;
-    background: var(--text-muted);
-    border-radius: 50%;
-    animation: typing 1.4s infinite;
-    opacity: 0.4;
+	width: 6px;
+	height: 6px;
+	background: var(--text-muted);
+	border-radius: 50%;
+	animation: typing 1.4s infinite;
+	opacity: 0.4;
 }
 
 .typing-indicator span:nth-child(2) {
-    animation-delay: 0.2s;
+	animation-delay: 0.2s;
 }
 
 .typing-indicator span:nth-child(3) {
-    animation-delay: 0.4s;
+	animation-delay: 0.4s;
 }
 
 @keyframes typing {
-    0%, 100% { opacity: 0.4; }
-    50% { opacity: 1; }
+	0%,
+	100% {
+		opacity: 0.4;
+	}
+	50% {
+		opacity: 1;
+	}
 }
 
 /* Improve markdown rendering in messages */
 .gemini-message-bot {
-    max-width: 100%;
-    background: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 8px;
-    margin: 8px 0;
+	max-width: 100%;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	margin: 8px 0;
 }
 
 .response-content {
-    padding: 16px;
-    overflow-y: auto;
-    max-height: 100%;
-    word-wrap: break-word;
+	padding: 16px;
+	overflow-y: auto;
+	max-height: 100%;
+	word-wrap: break-word;
 }
 
 .response-content > * {
-    width: 100%;
-    margin: 8px 0;
+	width: 100%;
+	margin: 8px 0;
 }
 
 .response-content pre {
-    background: var(--background-secondary);
-    padding: 12px;
-    border-radius: 4px;
-    overflow-x: auto;
-    white-space: pre-wrap;
-    width: 100%;
-    max-width: 100%;
-    overflow-x: auto;
-    white-space: pre-wrap;
+	background: var(--background-secondary);
+	padding: 12px;
+	border-radius: 4px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	width: 100%;
+	max-width: 100%;
+	overflow-x: auto;
+	white-space: pre-wrap;
 }
 
 .response-content ul,
 .response-content ol {
-    width: 100%;
-    padding-left: 24px;
-    margin: 8px 0;
+	width: 100%;
+	padding-left: 24px;
+	margin: 8px 0;
 }
 
 .response-content table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 8px 0;
-    display: table;
+	width: 100%;
+	border-collapse: collapse;
+	margin: 8px 0;
+	display: table;
 }
 
 .response-content th,
 .response-content td {
-    border: 1px solid var(--background-modifier-border);
-    padding: 6px 8px;
-    text-align: left;
+	border: 1px solid var(--background-modifier-border);
+	padding: 6px 8px;
+	text-align: left;
 }
 
 .response-content img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 4px;
-    margin: 8px 0;
+	max-width: 100%;
+	height: auto;
+	border-radius: 4px;
+	margin: 8px 0;
 }
 
 .response-content blockquote {
-    margin: 8px 0;
-    padding: 8px 16px;
-    border-left: 3px solid var(--interactive-accent);
-    background: var(--background-secondary);
-    border-radius: 0 4px 4px 0;
+	margin: 8px 0;
+	padding: 8px 16px;
+	border-left: 3px solid var(--interactive-accent);
+	background: var(--background-secondary);
+	border-radius: 0 4px 4px 0;
 }
 
 /* More Options Menu */
 .more-options-menu {
-    position: fixed;
-    background: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    z-index: 1001;
-    min-width: 180px;
+	position: fixed;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	z-index: 1001;
+	min-width: 180px;
 }
 
 .menu-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    cursor: pointer;
-    color: var(--text-normal);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	cursor: pointer;
+	color: var(--text-normal);
 }
 
 .menu-item:hover {
-    background: var(--background-modifier-hover);
+	background: var(--background-modifier-hover);
 }
 
 .menu-item svg {
-    opacity: 0.7;
+	opacity: 0.7;
 }
 
 /* Full Page Mode */
 .gemini-chat-container.full-page {
-    top: 20px;
-    left: 20px;
-    right: 20px !important;
-    bottom: 20px !important;
-    width: auto;
-    height: auto;
-    animation: expandToFull 0.3s ease-out;
+	top: 20px;
+	left: 20px;
+	right: 20px !important;
+	bottom: 20px !important;
+	width: auto;
+	height: auto;
+	animation: expandToFull 0.3s ease-out;
 }
 
 @keyframes expandToFull {
-    from {
-        transform: scale(0.95);
-        opacity: 0.8;
-    }
-    to {
-        transform: scale(1);
-        opacity: 1;
-    }
+	from {
+		transform: scale(0.95);
+		opacity: 0.8;
+	}
+	to {
+		transform: scale(1);
+		opacity: 1;
+	}
 }
 
 /* Update chat messages container for full page */
 .gemini-chat-container.full-page .gemini-chat-messages {
-    flex: 1;
+	flex: 1;
 }
 
 /* History button active state */
 .history-button.active {
-    color: var(--interactive-accent);
+	color: var(--interactive-accent);
 }
 
 /* Chat History View */
 .chat-history-view {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: var(--background-primary);
-    z-index: 1001;
-    display: flex;
-    flex-direction: column;
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: var(--background-primary);
+	z-index: 1001;
+	display: flex;
+	flex-direction: column;
 }
 
 .chat-history-header {
-    padding: 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    border-bottom: 1px solid var(--background-modifier-border);
+	padding: 16px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	border-bottom: 1px solid var(--background-modifier-border);
 }
 
 .chat-history-header h2 {
-    margin: 0;
-    flex-grow: 1;
-    font-size: 1.2em;
+	margin: 0;
+	flex-grow: 1;
+	font-size: 1.2em;
 }
 
 .back-button,
 .new-chat-button {
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 4px;
+	cursor: pointer;
+	padding: 4px 8px;
+	border-radius: 4px;
 }
 
 .back-button:hover,
 .new-chat-button:hover {
-    background: var(--background-modifier-hover);
+	background: var(--background-modifier-hover);
 }
 
 .new-chat-button {
-    color: var(--text-accent);
+	color: var(--text-accent);
 }
 
 .chat-history-search {
-    padding: 16px;
-    border-bottom: 1px solid var(--background-modifier-border);
+	padding: 16px;
+	border-bottom: 1px solid var(--background-modifier-border);
 }
 
 .chat-history-search input {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 6px;
-    background: var(--background-modifier-form-field);
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	background: var(--background-modifier-form-field);
 }
 
 .chat-history-sections {
-    flex-grow: 1;
-    overflow-y: auto;
-    padding: 16px;
+	flex-grow: 1;
+	overflow-y: auto;
+	padding: 16px;
 }
 
 .history-section {
-    margin-bottom: 24px;
+	margin-bottom: 24px;
 }
 
 .history-section h3 {
-    font-size: 0.9em;
-    color: var(--text-muted);
-    margin-bottom: 12px;
+	font-size: 0.9em;
+	color: var(--text-muted);
+	margin-bottom: 12px;
 }
 
 .history-item {
-    position: relative;
-    padding-right: 40px; /* Space for delete button */
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s;
+	position: relative;
+	padding-right: 40px; /* Space for delete button */
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: background-color 0.2s;
 }
 
 .history-item:hover {
-    background: var(--background-modifier-hover);
+	background: var(--background-modifier-hover);
 }
 
 .history-item-icon {
-    font-size: 1.2em;
+	font-size: 1.2em;
 }
 
 .history-item-content {
-    flex-grow: 1;
+	flex-grow: 1;
 }
 
 .history-item-title {
-    font-weight: 500;
-    margin-bottom: 4px;
+	font-weight: 500;
+	margin-bottom: 4px;
 }
 
 .history-item-time {
-    font-size: 0.8em;
-    color: var(--text-muted);
+	font-size: 0.8em;
+	color: var(--text-muted);
 }
 
 .delete-chat {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    opacity: 0;
-    transition: opacity 0.2s;
-    padding: 4px;
-    border-radius: 4px;
-    color: var(--text-error);
+	position: absolute;
+	right: 12px;
+	top: 50%;
+	transform: translateY(-50%);
+	opacity: 0;
+	transition: opacity 0.2s;
+	padding: 4px;
+	border-radius: 4px;
+	color: var(--text-error);
 }
 
 .history-item:hover .delete-chat {
-    opacity: 0.7;
+	opacity: 0.7;
 }
 
 .delete-chat:hover {
-    opacity: 1 !important;
-    background: var(--background-modifier-error);
-    color: var(--text-on-accent);
+	opacity: 1 !important;
+	background: var(--background-modifier-error);
+	color: var(--text-on-accent);
 }
 
 /* Back button improvements */
 .back-button {
-    display: flex;
-    align-items: center;
-    padding: 8px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
+	display: flex;
+	align-items: center;
+	padding: 8px;
+	border-radius: 4px;
+	transition: background-color 0.2s;
 }
 
 .back-button:hover {
-    background-color: var(--background-modifier-hover);
+	background-color: var(--background-modifier-hover);
 }
 
 /* File Selection Modal */
 .suggestion-path {
-    font-size: 0.8em;
-    color: var(--text-muted);
-    margin-top: 4px;
+	font-size: 0.8em;
+	color: var(--text-muted);
+	margin-top: 4px;
 }
 
 .suggestion-item {
-    padding: 8px 12px;
-    cursor: pointer;
-    border-radius: 4px;
+	padding: 8px 12px;
+	cursor: pointer;
+	border-radius: 4px;
 }
 
 .suggestion-item:hover {
-    background-color: var(--background-modifier-hover);
+	background-color: var(--background-modifier-hover);
 }
 
 .suggestion-item.is-selected {
-    background-color: var(--background-modifier-hover);
+	background-color: var(--background-modifier-hover);
 }
 
 /* Referenced File Tags */
 .chat-input-wrapper .reference-tag {
-    display: inline-block;
-    background-color: var(--background-modifier-hover);
-    padding: 2px 6px;
-    border-radius: 4px;
-    margin: 0 2px;
-    font-size: 0.9em;
-    color: var(--text-accent);
+	display: inline-block;
+	background-color: var(--background-modifier-hover);
+	padding: 2px 6px;
+	border-radius: 4px;
+	margin: 0 2px;
+	font-size: 0.9em;
+	color: var(--text-accent);
 }
 
 /* Response Formatting */
 .gemini-message-bot {
-    background: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 8px;
-    overflow: hidden;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	overflow: hidden;
 }
 
 .response-header {
-    padding: 8px 12px;
-    background: var(--background-secondary);
-    border-bottom: 1px solid var(--background-modifier-border);
-    display: flex;
-    justify-content: flex-end;
+	padding: 8px 12px;
+	background: var(--background-secondary);
+	border-bottom: 1px solid var(--background-modifier-border);
+	display: flex;
+	justify-content: flex-end;
 }
 
 .copy-response-button {
-    background: var(--interactive-accent);
-    color: var(--text-on-accent);
-    padding: 4px 8px;
-    border-radius: 4px;
-    border: none;
-    cursor: pointer;
-    font-size: 12px;
-    transition: opacity 0.2s;
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	padding: 4px 8px;
+	border-radius: 4px;
+	border: none;
+	cursor: pointer;
+	font-size: 12px;
+	transition: opacity 0.2s;
 }
 
 .copy-response-button:hover {
-    opacity: 0.9;
+	opacity: 0.9;
 }
 
 .response-content {
-    padding: 16px;
-    color: var(--text-normal);
+	padding: 16px;
+	color: var(--text-normal);
 }
 
 /* Markdown Content Styling */
@@ -651,61 +675,61 @@ If your plugin does not need CSS, delete this file.
 .response-content h4,
 .response-content h5,
 .response-content h6 {
-    margin-top: 1em;
-    margin-bottom: 0.5em;
+	margin-top: 1em;
+	margin-bottom: 0.5em;
 }
 
 .response-content p {
-    margin: 0.5em 0;
+	margin: 0.5em 0;
 }
 
 .response-content ul,
 .response-content ol {
-    margin: 0.5em 0;
-    padding-left: 1.5em;
+	margin: 0.5em 0;
+	padding-left: 1.5em;
 }
 
 .response-content code {
-    background: var(--background-secondary);
-    padding: 0.2em 0.4em;
-    border-radius: 3px;
-    font-family: var(--font-monospace);
-    font-size: 0.9em;
+	background: var(--background-secondary);
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-family: var(--font-monospace);
+	font-size: 0.9em;
 }
 
 .response-content pre {
-    background: var(--background-secondary);
-    padding: 1em;
-    border-radius: 4px;
-    overflow-x: auto;
-    margin: 0.5em 0;
+	background: var(--background-secondary);
+	padding: 1em;
+	border-radius: 4px;
+	overflow-x: auto;
+	margin: 0.5em 0;
 }
 
 .response-content blockquote {
-    border-left: 3px solid var(--interactive-accent);
-    margin: 0.5em 0;
-    padding-left: 1em;
-    color: var(--text-muted);
+	border-left: 3px solid var(--interactive-accent);
+	margin: 0.5em 0;
+	padding-left: 1em;
+	color: var(--text-muted);
 }
 
 /* Copy button styling */
 .copy-response-button {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: var(--interactive-accent);
-    color: var(--text-on-accent);
-    padding: 4px 8px;
-    border-radius: 4px;
-    border: none;
-    cursor: pointer;
-    font-size: 12px;
-    opacity: 0;
-    transition: opacity 0.2s;
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	padding: 4px 8px;
+	border-radius: 4px;
+	border: none;
+	cursor: pointer;
+	font-size: 12px;
+	opacity: 0;
+	transition: opacity 0.2s;
 }
 
 .gemini-message-bot:hover .copy-response-button {
-    opacity: 1;
+	opacity: 1;
 }
 
 /* Direct markdown content styling */
@@ -715,165 +739,175 @@ If your plugin does not need CSS, delete this file.
 .gemini-message-bot h4,
 .gemini-message-bot h5,
 .gemini-message-bot h6 {
-    margin: 1em 0 0.5em 0;
-    line-height: 1.3;
+	margin: 1em 0 0.5em 0;
+	line-height: 1.3;
 }
 
 .gemini-message-bot p {
-    margin: 0.8em 0;
-    line-height: 1.6;
+	margin: 0.8em 0;
+	line-height: 1.6;
 }
 
 .gemini-message-bot ul,
 .gemini-message-bot ol {
-    margin: 0.8em 0;
-    padding-left: 1.5em;
+	margin: 0.8em 0;
+	padding-left: 1.5em;
 }
 
 .gemini-message-bot li {
-    margin: 0.3em 0;
+	margin: 0.3em 0;
 }
 
 .gemini-message-bot pre {
-    background: var(--background-secondary);
-    padding: 12px 16px;
-    border-radius: 8px;
-    margin: 1em 0;
-    overflow-x: auto;
+	background: var(--background-secondary);
+	padding: 12px 16px;
+	border-radius: 8px;
+	margin: 1em 0;
+	overflow-x: auto;
 }
 
 .gemini-message-bot code {
-    background: var(--background-secondary);
-    padding: 0.2em 0.4em;
-    border-radius: 4px;
-    font-family: var(--font-monospace);
-    font-size: 0.9em;
+	background: var(--background-secondary);
+	padding: 0.2em 0.4em;
+	border-radius: 4px;
+	font-family: var(--font-monospace);
+	font-size: 0.9em;
 }
 
 .gemini-message-bot blockquote {
-    margin: 1em 0;
-    padding: 0.5em 1em;
-    border-left: 3px solid var(--interactive-accent);
-    background: var(--background-secondary);
-    border-radius: 0 4px 4px 0;
+	margin: 1em 0;
+	padding: 0.5em 1em;
+	border-left: 3px solid var(--interactive-accent);
+	background: var(--background-secondary);
+	border-radius: 0 4px 4px 0;
 }
 
 .gemini-message-bot table {
-    border-collapse: collapse;
-    width: 100%;
-    margin: 1em 0;
+	border-collapse: collapse;
+	width: 100%;
+	margin: 1em 0;
 }
 
 .gemini-message-bot th,
 .gemini-message-bot td {
-    border: 1px solid var(--background-modifier-border);
-    padding: 8px 12px;
+	border: 1px solid var(--background-modifier-border);
+	padding: 8px 12px;
 }
 
 .gemini-message-bot th {
-    background: var(--background-secondary);
+	background: var(--background-secondary);
 }
 
 /* Typewriter animation */
 @keyframes typewriter {
-    from {
-        opacity: 0;
-        transform: translateY(5px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+	from {
+		opacity: 0;
+		transform: translateY(5px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 
 .response-content > * {
-    animation: typewriter 0.2s ease-out forwards;
-    opacity: 0;
+	animation: typewriter 0.2s ease-out forwards;
+	opacity: 0;
 }
 
-.response-content > *:nth-child(1) { animation-delay: 0.1s; }
-.response-content > *:nth-child(2) { animation-delay: 0.2s; }
-.response-content > *:nth-child(3) { animation-delay: 0.3s; }
-.response-content > *:nth-child(4) { animation-delay: 0.4s; }
-.response-content > *:nth-child(5) { animation-delay: 0.5s; }
+.response-content > *:nth-child(1) {
+	animation-delay: 0.1s;
+}
+.response-content > *:nth-child(2) {
+	animation-delay: 0.2s;
+}
+.response-content > *:nth-child(3) {
+	animation-delay: 0.3s;
+}
+.response-content > *:nth-child(4) {
+	animation-delay: 0.4s;
+}
+.response-content > *:nth-child(5) {
+	animation-delay: 0.5s;
+}
 /* Add more if needed */
 
 /* Better blockquote styling */
 .response-content blockquote {
-    margin: 1em 0;
-    padding: 0.5em 1em;
-    border-left: 3px solid var(--interactive-accent);
-    background: var(--background-secondary);
-    border-radius: 0 4px 4px 0;
+	margin: 1em 0;
+	padding: 0.5em 1em;
+	border-left: 3px solid var(--interactive-accent);
+	background: var(--background-secondary);
+	border-radius: 0 4px 4px 0;
 }
 
 /* Table styling */
 .response-content table {
-    border-collapse: collapse;
-    width: 100%;
-    margin: 1em 0;
+	border-collapse: collapse;
+	width: 100%;
+	margin: 1em 0;
 }
 
 .response-content th,
 .response-content td {
-    border: 1px solid var(--background-modifier-border);
-    padding: 8px 12px;
+	border: 1px solid var(--background-modifier-border);
+	padding: 8px 12px;
 }
 
 .response-content th {
-    background: var(--background-secondary);
+	background: var(--background-secondary);
 }
 
 /* Bot message styling */
 .gemini-message-bot {
-    width: 100%;
-    max-height: 400px;
-    overflow-y: auto;
-    background: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 12px;
-    margin: 8px 0;
-    padding: 16px;
-    position: relative;
+	width: 100%;
+	max-height: 400px;
+	overflow-y: auto;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 12px;
+	margin: 8px 0;
+	padding: 16px;
+	position: relative;
 }
 
 /* Scrollbar styling for the bot message */
 .gemini-message-bot::-webkit-scrollbar {
-    width: 8px;
+	width: 8px;
 }
 
 .gemini-message-bot::-webkit-scrollbar-track {
-    background: var(--background-primary);
-    border-radius: 0 12px 12px 0;
+	background: var(--background-primary);
+	border-radius: 0 12px 12px 0;
 }
 
 .gemini-message-bot::-webkit-scrollbar-thumb {
-    background: var(--background-modifier-border);
-    border-radius: 4px;
+	background: var(--background-modifier-border);
+	border-radius: 4px;
 }
 
 .gemini-message-bot::-webkit-scrollbar-thumb:hover {
-    background: var(--interactive-accent);
+	background: var(--interactive-accent);
 }
 
 /* Copy button */
 .copy-response-button {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: var(--interactive-accent);
-    color: var(--text-on-accent);
-    padding: 4px 8px;
-    border-radius: 4px;
-    border: none;
-    cursor: pointer;
-    font-size: 12px;
-    opacity: 0;
-    transition: opacity 0.2s;
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	padding: 4px 8px;
+	border-radius: 4px;
+	border: none;
+	cursor: pointer;
+	font-size: 12px;
+	opacity: 0;
+	transition: opacity 0.2s;
 }
 
 .gemini-message-bot:hover .copy-response-button {
-    opacity: 1;
+	opacity: 1;
 }
 
 /* Direct markdown styling */
@@ -883,48 +917,101 @@ If your plugin does not need CSS, delete this file.
 .gemini-message-bot h4,
 .gemini-message-bot h5,
 .gemini-message-bot h6 {
-    margin: 1em 0 0.5em 0;
+	margin: 1em 0 0.5em 0;
 }
 
 .gemini-message-bot p {
-    margin: 0.8em 0;
+	margin: 0.8em 0;
 }
 
 .gemini-message-bot ul,
 .gemini-message-bot ol {
-    margin: 0.8em 0;
-    padding-left: 1.5em;
+	margin: 0.8em 0;
+	padding-left: 1.5em;
 }
 
 .gemini-message-bot pre {
-    background: var(--background-secondary);
-    padding: 12px 16px;
-    border-radius: 4px;
-    overflow-x: auto;
-    margin: 0.8em 0;
+	background: var(--background-secondary);
+	padding: 12px 16px;
+	border-radius: 4px;
+	overflow-x: auto;
+	margin: 0.8em 0;
 }
 
 .gemini-message-bot code {
-    background: var(--background-secondary);
-    padding: 0.2em 0.4em;
-    border-radius: 3px;
-    font-size: 0.9em;
+	background: var(--background-secondary);
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 0.9em;
 }
 
 /* Scrollbar styling for messages container */
 .gemini-chat-messages::-webkit-scrollbar {
-    width: 8px;
+	width: 8px;
 }
 
 .gemini-chat-messages::-webkit-scrollbar-track {
-    background: var(--background-primary);
+	background: var(--background-primary);
 }
 
 .gemini-chat-messages::-webkit-scrollbar-thumb {
-    background: var(--background-modifier-border);
-    border-radius: 4px;
+	background: var(--background-modifier-border);
+	border-radius: 4px;
 }
 
 .gemini-chat-messages::-webkit-scrollbar-thumb:hover {
-    background: var(--interactive-accent);
+	background: var(--interactive-accent);
+}
+
+/* Floating Chat Icon */
+.gemini-chat-icon {
+	position: fixed;
+	bottom: 40px !important;
+	right: 20px !important;
+	width: 40px;
+	height: 40px;
+	background-color: rgba(255, 255, 255, 0.5);
+	border: 1px solid rgba(255, 255, 255, 0.3);
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	transition: all 0.2s ease;
+	z-index: 1000;
+	padding: 8px;
+}
+
+.gemini-chat-icon:hover {
+	transform: scale(1.1);
+}
+
+/* Load Recent Chats Animation */
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+.gemini-chat-messages > div {
+	animation: fadeIn 0.5s ease-in;
+}
+
+/* Delete Chat Animation */
+@keyframes fadeOut {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
+	}
+}
+
+.history-item.deleting {
+	animation: fadeOut 0.3s ease-out;
+	pointer-events: none;
 }
