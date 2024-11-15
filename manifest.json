@@ -4,8 +4,8 @@
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
 	"description": "An AI-powered chatbot using Google's Gemini API that provides a floating chat interface for note summarization, brainstorming, and more.",
-	"author": "Your Name",
-	"authorUrl": "https://github.com/yourusername",
+	"author": "Neo",
+	"authorUrl": "https://github.com/tharushkadinujaya05",
 	"isDesktopOnly": false,
 	"fundingUrl": {
 		"Buy Me a Coffee": "https://buymeacoffee.com/yourusername",
