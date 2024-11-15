@@ -201,9 +201,10 @@ export default class GeminiChatbotPlugin extends Plugin {
 			});
 			
 			copyButton.addEventListener('click', async () => {
-				const fileName = `AI Response ${new Date().toLocaleString().replace(/[/:\\]/g, '-')}`;
+				// Generate creative title based on content
+				const title = this.generateNoteTitle(message.content);
 				const file = await this.app.vault.create(
-					`${fileName}.md`,
+					`${title}.md`,
 					message.content
 				);
 				const leaf = this.app.workspace.getLeaf(false);
@@ -974,6 +975,57 @@ export default class GeminiChatbotPlugin extends Plugin {
 		// Create content container with proper formatting
 		const contentDiv = container.createDiv('response-content');
 		await MarkdownRenderer.renderMarkdown(content, contentDiv, '', this);
+	}
+
+	// Add method to generate creative titles
+	private generateNoteTitle(content: string): string {
+		// Try to identify the type of content
+		const isQuiz = content.toLowerCase().includes('quiz') || 
+			content.toLowerCase().includes('question');
+		const isSummary = content.toLowerCase().includes('summary') || 
+			content.toLowerCase().includes('summarize');
+		const isTranslation = content.toLowerCase().includes('translation') || 
+			content.toLowerCase().includes('translated');
+
+		// Get current file name if available
+		const activeFile = this.app.workspace.getActiveFile();
+		const fileName = activeFile ? activeFile.basename : '';
+
+		// Generate title based on content type
+		if (isQuiz) {
+			return `Quiz - ${fileName}`;
+		}
+		if (isSummary) {
+			return `Summary - ${fileName}`;
+		}
+		if (isTranslation) {
+			// Try to detect target language
+			const langMatch = content.match(/translated? to (\w+)/i);
+			const language = langMatch ? langMatch[1] : 'Other Language';
+			return `${language} Translation - ${fileName}`;
+		}
+
+		// For other types, try to extract meaningful content
+		// First, try to get first heading
+		const headingMatch = content.match(/^#\s+(.+)$/m);
+		if (headingMatch) {
+			return `${headingMatch[1].trim()} - ${fileName}`;
+		}
+
+		// If no heading, try first line
+		const firstLine = content.split('\n')[0].trim();
+		if (firstLine && firstLine.length < 50) {
+			return `${firstLine} - ${fileName}`;
+		}
+
+		// Fallback: Use file name with timestamp
+		const now = new Date();
+		return `${fileName} Notes - ${now.toLocaleString('en-US', { 
+			month: 'short', 
+			day: 'numeric',
+			hour: 'numeric',
+			minute: '2-digit'
+		})}`;
 	}
 }
 
