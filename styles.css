@@ -683,3 +683,73 @@ If your plugin does not need CSS, delete this file.
     padding-left: 1em;
     color: var(--text-muted);
 }
+
+/* Bot message styling */
+.gemini-message-bot {
+    width: 100%;
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    margin: 8px 0;
+    position: relative;
+}
+
+.copy-response-button {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.gemini-message-bot:hover .copy-response-button {
+    opacity: 1;
+}
+
+.response-content {
+    padding: 16px;
+    overflow-x: auto;
+}
+
+/* Markdown content styling */
+.response-content p {
+    margin: 0.5em 0;
+}
+
+.response-content h1,
+.response-content h2,
+.response-content h3,
+.response-content h4,
+.response-content h5,
+.response-content h6 {
+    margin: 1em 0 0.5em 0;
+}
+
+.response-content ul,
+.response-content ol {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+}
+
+.response-content pre {
+    background: var(--background-secondary);
+    padding: 1em;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 0.5em 0;
+}
+
+.response-content code {
+    background: var(--background-secondary);
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: var(--font-monospace);
+    font-size: 0.9em;
+}

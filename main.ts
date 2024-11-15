@@ -194,8 +194,33 @@ export default class GeminiChatbotPlugin extends Plugin {
 		messageEl.addClass(`gemini-message-${message.role}`);
 
 		if (message.role === 'bot') {
-			// Use the new formatting for bot messages
-			await this.formatBotResponse(messageEl, message.content);
+			// Create content container
+			const contentDiv = messageEl.createDiv('response-content');
+			
+			// Add copy button
+			const copyButton = messageEl.createEl('button', {
+				text: 'Copy to new note',
+				cls: 'copy-response-button',
+			});
+			
+			copyButton.addEventListener('click', async () => {
+				const fileName = `AI Response ${new Date().toLocaleString().replace(/[/:\\]/g, '-')}`;
+				const file = await this.app.vault.create(
+					`${fileName}.md`,
+					message.content
+				);
+				const leaf = this.app.workspace.getLeaf(false);
+				await leaf.openFile(file);
+				new Notice('Response copied to new note!');
+			});
+
+			// Render markdown content
+			await MarkdownRenderer.renderMarkdown(
+				message.content,
+				contentDiv,
+				'',
+				this
+			);
 		} else {
 			// For user messages, just show the visible part
 			const visibleContent = this.stripContextFromMessage(message.content);
