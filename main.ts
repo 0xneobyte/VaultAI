@@ -49,6 +49,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 	private isFullPage = false
 	private currentSession: ChatSession | null = null
 	private referencedFiles: Map<string, string> | null = null
+	private lastApiCall = 0
+	private readonly API_COOLDOWN = 1000 // 1 second cooldown between calls
+	private readonly MAX_CONTEXT_LENGTH = 30000 // Limit context length to avoid token limits
 
 	async onload() {
 		await this.loadSettings()
@@ -80,30 +83,41 @@ export default class GeminiChatbotPlugin extends Plugin {
 	private async handleMessage(message: string) {
 		if (!this.geminiService || !message.trim()) return
 
+		// Check API cooldown
+		const now = Date.now()
+		if (now - this.lastApiCall < this.API_COOLDOWN) {
+			this.addErrorMessage("Please wait a moment before sending another message")
+			return
+		}
+
 		this.toggleSuggestedActions(false)
 
-		// Build context
+		// Build context more efficiently
 		let contextMessage = message
 		let context = ''
 
 		// Add referenced file content if any
 		const fileReferences = message.match(/@([^\s]+)/g)
 		if (fileReferences) {
-			contextMessage = message.replace(/@([^\s]+)/g, '').trim() // Remove @ references
-			fileReferences.forEach(ref => {
+			contextMessage = message.replace(/@([^\s]+)/g, '').trim()
+			for (const ref of fileReferences) {
 				const fileName = ref.slice(1)
 				const fileContent = this.referencedFiles?.get(fileName)
 				if (fileContent) {
-					context += `\nContent from ${fileName}:\n${fileContent}\n`
+					// Add only the first part of long files
+					const truncatedContent = this.truncateContent(fileContent)
+					context += `\nRelevant content from ${fileName}:\n${truncatedContent}\n`
 				}
-			})
+			}
 		}
 
 		// Add current file content if available and no specific file was referenced
 		const activeFile = this.app.workspace.getActiveFile()
 		if (activeFile && !fileReferences) {
 			const content = await this.app.vault.read(activeFile)
-			context += `\nContent from current note:\n${content}\n`
+			// Add only relevant parts of the current file
+			const truncatedContent = this.truncateContent(content)
+			context += `\nRelevant content from current note:\n${truncatedContent}\n`
 		}
 
 		// Prepare the final message
@@ -117,15 +131,14 @@ export default class GeminiChatbotPlugin extends Plugin {
 			timestamp: Date.now()
 		}
 
-		// Show only the user's question in the chat
 		await this.addMessageToChat({
 			...userMessage,
-			content: contextMessage // Show only the actual question
+			content: contextMessage
 		})
 
 		// Add typing indicator
-		const typingIndicator = document.createElement("div")
-		typingIndicator.addClass("typing-indicator")
+		const typingIndicator = document.createElement('div')
+		typingIndicator.addClass('typing-indicator')
 		typingIndicator.innerHTML = `
 			<span></span>
 			<span></span>
@@ -134,35 +147,43 @@ export default class GeminiChatbotPlugin extends Plugin {
 		this.messagesContainer?.appendChild(typingIndicator)
 
 		try {
+			this.lastApiCall = Date.now() // Update last API call time
 			const response = await this.geminiService.sendMessage(finalMessage)
 			typingIndicator.remove()
 
 			const botMessage: ChatMessage = {
-				role: "bot",
+				role: 'bot',
 				content: response,
-				timestamp: Date.now(),
+				timestamp: Date.now()
 			}
 
 			await this.addMessageToChat(botMessage)
 
-			// Save the current session after each message exchange
 			if (this.currentSession) {
-				// Update session title after first exchange
-				if (this.currentSession.messages.length === 2) { // After first user message and bot response
+				if (this.currentSession.messages.length === 2) {
 					this.currentSession.title = this.generateSessionTitle(userMessage.content)
 				}
 				
-				// Update sessions array
 				this.settings.chatSessions = [
 					this.currentSession,
-					...this.settings.chatSessions.filter((s) => s.id !== this.currentSession?.id),
+					...this.settings.chatSessions.filter(s => s.id !== this.currentSession?.id)
 				]
 				
 				await this.saveSettings()
 			}
 		} catch (error) {
 			typingIndicator.remove()
-			this.addErrorMessage("Failed to get response from Gemini")
+			
+			// Better error handling
+			let errorMessage = "Failed to get response from Gemini"
+			if (error instanceof Error) {
+				if (error.message.includes('429')) {
+					errorMessage = "Rate limit reached. Please wait a moment before trying again."
+				} else if (error.message.includes('quota')) {
+					errorMessage = "API quota exceeded. Please try again later."
+				}
+			}
+			this.addErrorMessage(errorMessage)
 		}
 	}
 
@@ -907,6 +928,22 @@ export default class GeminiChatbotPlugin extends Plugin {
 			}
 		});
 		modal.open();
+	}
+
+	// Add method to truncate content intelligently
+	private truncateContent(content: string): string {
+		if (content.length <= this.MAX_CONTEXT_LENGTH) {
+			return content;
+		}
+
+		// Try to find a good breaking point
+		const relevantPart = content.slice(0, this.MAX_CONTEXT_LENGTH);
+		const lastParagraph = relevantPart.lastIndexOf('\n\n');
+		if (lastParagraph !== -1) {
+			return relevantPart.slice(0, lastParagraph) + '\n\n[Content truncated for length...]';
+		}
+
+		return relevantPart + '[Content truncated for length...]';
 	}
 }
 
