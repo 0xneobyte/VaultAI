@@ -313,7 +313,60 @@ export default class GeminiChatbotPlugin extends Plugin {
 			
 			<div class="bot-info">
 				<div class="bot-avatar">
-					<i class="fa-solid fa-brain"></i>
+					<svg viewBox="0 0 1080 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<defs>
+							<filter id="filter" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox" primitiveUnits="userSpaceOnUse" color-interpolation-filters="linearRGB">
+								<feMorphology operator="dilate" radius="20 20" in="SourceAlpha" result="morphology"/>
+								<feFlood flood-color="#ffffff" flood-opacity="1" result="flood"/>
+								<feComposite in="flood" in2="morphology" operator="in" result="composite"/>
+								<feMerge result="merge">
+									<feMergeNode in="composite" result="mergeNode"/>
+									<feMergeNode in="SourceGraphic" result="mergeNode1"/>
+								</feMerge>
+							</filter>
+						</defs>
+						<g id="notion-avatar" filter="url(#filter)">
+							<g id="notion-avatar-face" fill="#ffffff">
+								<title>Face/ 5</title>
+								<g id="Face/-5" stroke="none" stroke-width="1" fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round">
+									<path d="M532,379 C664.54834,379 772,486.45166 772,619 C772,751.54834 704.54834,859 532,859 C405.842528,859 335.866563,801.559592 307.358668,718.866959 C265.336704,716.464588 232,681.625396 232,639 C232,599.134956 261.158843,566.080325 299.312086,560.00055 C325.599297,455.979213 419.809919,379 532,379 Z M295.858895,624.545187 L304.141105,655.454813" id="Path" stroke="#000000" stroke-width="24"/>
+								</g>
+							</g>
+							<g id="notion-avatar-nose">
+								<title>Nose/ 5</title>
+								<g id="Nose/-5" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round">
+									<path d="M673,568 C662.55102,590.836147 657.326531,613.414126 657.326531,635.733939 C657.326531,669.213657 673,686.992054 670.061224,702.552554 C668.102041,712.92622 653.081633,714.756867 625,708.044495" id="Path" stroke="#000000" stroke-width="16"/>
+								</g>
+							</g>
+							<g id="notion-avatar-mouth">
+								<title>Mouth/ 1</title>
+								<g id="Mouth/-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round">
+									<path d="M549,759 C575.12979,773.666667 603.12979,781 633,781 C662.87021,781 682.87021,773.666667 693,759" id="Path" stroke="#000000" stroke-width="16"/>
+								</g>
+							</g>
+							<g id="notion-avatar-eyes">
+								<title>Eyes/ 7</title>
+								<g id="Eyes/-7" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+									<path d="M570,516 C578.836556,516 586,526.745166 586,540 C586,553.254834 578.836556,564 570,564 C561.163444,564 554,553.254834 554,540 C554,526.745166 561.163444,516 570,516 Z M708,516 C716.836556,516 724,526.745166 724,540 C724,553.254834 716.836556,564 708,564 C699.163444,564 692,553.254834 692,540 C692,526.745166 699.163444,516 708,516 Z M568,527 C564.686292,527 562,529.686292 562,533 C562,536.313708 564.686292,539 568,539 C571.313708,539 574,536.313708 574,533 C574,529.686292 571.313708,527 568,527 Z M706,527 C702.686292,527 700,529.686292 700,533 C700,536.313708 702.686292,539 706,539 C709.313708,539 712,536.313708 712,533 C712,529.686292 709.313708,527 706,527 Z" id="Combined-Shape" fill="#000000"/>
+								</g>
+							</g>
+							<g id="notion-avatar-eyebrows">
+								<title>Eyebrows/ 1</title>
+								<g id="Eyebrows/-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" stroke-linecap="square" stroke-linejoin="round">
+									<g id="Group" transform="translate(521.000000, 490.000000)" stroke="#000000" stroke-width="20">
+										<path d="M0,16 C12.8888889,5.33333333 27.8888889,0 45,0 C62.1111111,0 77.1111111,5.33333333 90,16" id="Path"/>
+										<path d="M146,16 C158.888889,5.33333333 173.888889,0 191,0 C208.111111,0 223.111111,5.33333333 236,16" id="Path"/>
+									</g>
+								</g>
+							</g>
+							<g id="notion-avatar-hair">
+								<title>Hairstyle/ 25</title>
+								<g id="Hairstyle/-25" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round">
+									<path d="M227,151 C291,143 344.152059,161.487028 368.024158,212.689811 C410.238527,194.447151 459.304239,186 515,186 C629.125983,186 703.747536,236.594939 747,304 C779.083989,354 792.083989,420.666667 786,504 L782.3412,503.1612 C722.927067,489.4804 699,484 661,460 C635.666667,444 602.333333,419.666667 561,387 C524.333333,437 495.333333,470 474,486 C442,510 357,547 304,565 C251,583 232,598 232,648 C232,681.333333 258.666667,705 312,719 C325.996223,746.033167 340.996223,769.366501 357,789 C373.003777,808.633499 393.003777,825.633499 417,840 C335.666667,855.333333 262.333333,855.333333 197,840 C131.666667,824.666667 79.3333333,791 40,739 C94.6666667,735 127.666667,710.333333 139,665 C169.469054,543.123784 93,519 93,379 C93,239 147.699952,160.912506 227,151 Z" id="Path" stroke="#000000" stroke-width="12" fill="#000000"/>
+								</g>
+							</g>
+						</g>
+					</svg>
 				</div>
 				<div class="bot-greeting">Hello, How can I help you today?</div>
 			</div>
