@@ -321,8 +321,8 @@ export default class GeminiChatbotPlugin extends Plugin {
 					Ask about this page
 				</div>
 				<div class="action-button">
-					<span class="action-icon">✓</span>
-					Find action items
+					<span class="action-icon">📚</span>
+					Make a quiz
 				</div>
 				<div class="action-button">
 					<span class="action-icon">🌐</span>
@@ -388,47 +388,58 @@ export default class GeminiChatbotPlugin extends Plugin {
 		const actionButtons = this.chatContainer.querySelectorAll(".action-button");
 		actionButtons.forEach((button) => {
 			button.addEventListener("click", () => {
+				console.log("Action button clicked:", button.textContent?.trim());
+				
 				const action = button.textContent?.trim();
-				if (!action) return;
-
-				// Get current file content
-				const activeFile = this.app.workspace.getActiveFile();
-				if (!activeFile) {
-					this.addErrorMessage("No active file selected");
+				if (!action || !this.inputField) {
+					console.log("No action or input field not found");
 					return;
 				}
 
-				// Create the appropriate prompt based on the action
-				let prompt = "";
+				// Hide suggested actions
+				console.log("Hiding suggested actions");
+				const suggestedActions = this.chatContainer.querySelector(".suggested-actions") as HTMLElement;
+				if (suggestedActions) {
+					suggestedActions.style.display = "none";
+				}
+
+				// Show messages container
+				console.log("Showing messages container");
+				if (this.messagesContainer) {
+					this.messagesContainer.style.display = "flex";
+				}
+
+				// Set input value based on action
+				console.log("Setting input value for action:", action);
 				switch (action) {
 					case "Summarize this page":
-						prompt = "Please provide a concise summary of this page";
+						this.inputField.value = "Can you summarize this note for me?";
 						break;
 					case "Ask about this page":
-						if (this.inputField) {
-							this.inputField.focus();
-							this.inputField.placeholder = "Ask a question about this page...";
-							return; // Exit as this case doesn't send a prompt
-						}
+						this.inputField.value = "What is this note about?";
 						break;
-					case "Find action items":
-						prompt = "Please list all action items, tasks, and to-dos from this page";
+					case "Make a quiz":
+						this.inputField.value = "Can you create a quiz using this note?";
 						break;
 					case "Translate to":
-						// Show language selection modal
 						new LanguageSelectionModal(this.app, (language: string) => {
-							const translationPrompt = `Please translate this content to ${language}`;
-							this.handleMessage(translationPrompt);
+							console.log("Language selected:", language);
+							if (this.inputField) {
+								this.inputField.value = `Can you translate this note to ${language}?`;
+								this.inputField.focus();
+							}
 						}).open();
-						return;
-					default:
 						return;
 				}
 
-				// If we have a prompt, send it
-				if (prompt) {
-					this.handleMessage(prompt);
-				}
+				// Trigger input event to update UI
+				console.log("Triggering input event");
+				this.inputField.dispatchEvent(new Event('input'));
+
+				// Send the message
+				console.log("Sending message:", this.inputField.value);
+				this.handleMessage(this.inputField.value);
+				this.inputField.value = "";
 			});
 		});
 
