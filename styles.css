@@ -192,14 +192,13 @@ If your plugin does not need CSS, delete this file.
 
 /* Add to existing styles.css */
 .gemini-chat-messages {
-    flex-grow: 1;
+    flex: 1;
     overflow-y: auto;
     padding: 16px;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    height: auto;
-    min-height: 200px;
+    max-height: calc(100% - 200px);
 }
 
 .gemini-message-user,
@@ -224,7 +223,10 @@ If your plugin does not need CSS, delete this file.
     border: 1px solid var(--background-modifier-border);
     border-radius: 8px;
     margin: 8px 0;
-    overflow: visible;
+    position: relative;
+    max-height: 60vh;
+    display: flex;
+    flex-direction: column;
 }
 
 .gemini-message-error {
@@ -317,11 +319,9 @@ If your plugin does not need CSS, delete this file.
 
 .response-content {
     padding: 16px;
-    color: var(--text-normal);
-    overflow-y: visible;
-    overflow-x: hidden;
+    overflow-y: auto;
+    max-height: 100%;
     word-wrap: break-word;
-    max-height: none;
 }
 
 .response-content > * {
