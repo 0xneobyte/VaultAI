@@ -37,7 +37,8 @@ If your plugin does not need CSS, delete this file.
     bottom: 100px !important;
     right: 20px !important;
     width: 380px;
-    height: 480px;
+    min-height: 480px;
+    max-height: 80vh;
     background-color: var(--background-primary);
     border-radius: 12px;
     border: 1px solid var(--background-modifier-border);
@@ -197,7 +198,8 @@ If your plugin does not need CSS, delete this file.
     display: flex;
     flex-direction: column;
     gap: 12px;
-    max-height: calc(100% - 140px);
+    height: auto;
+    min-height: 200px;
 }
 
 .gemini-message-user,
@@ -221,8 +223,8 @@ If your plugin does not need CSS, delete this file.
     background: var(--background-primary);
     border: 1px solid var(--background-modifier-border);
     border-radius: 8px;
-    margin: 4px 0;
-    overflow: hidden;
+    margin: 8px 0;
+    overflow: visible;
 }
 
 .gemini-message-error {
@@ -319,6 +321,7 @@ If your plugin does not need CSS, delete this file.
     overflow-y: visible;
     overflow-x: hidden;
     word-wrap: break-word;
+    max-height: none;
 }
 
 .response-content > * {
@@ -333,6 +336,9 @@ If your plugin does not need CSS, delete this file.
     overflow-x: auto;
     white-space: pre-wrap;
     width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: pre-wrap;
 }
 
 .response-content ul,
