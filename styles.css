@@ -538,26 +538,36 @@ If your plugin does not need CSS, delete this file.
 	font-size: 0.9em;
 	color: var(--text-muted);
 	margin-bottom: 12px;
+	padding-left: 8px;
+	font-weight: 600;
 }
 
 .history-item {
 	position: relative;
-	padding-right: 40px; /* Space for delete button */
 	display: flex;
 	align-items: center;
 	gap: 12px;
-	padding: 12px;
-	border-radius: 6px;
+	padding: 12px 16px;
+	border-radius: 8px;
 	cursor: pointer;
-	transition: background-color 0.2s;
+	transition: all 0.2s ease;
+	background: rgba(255, 255, 255, 0.1);
+	margin-bottom: 8px;
 }
 
 .history-item:hover {
-	background: var(--background-modifier-hover);
+	background: rgba(255, 255, 255, 0.2);
 }
 
 .history-item-icon {
-	font-size: 1.2em;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 8px;
+	background: rgba(255, 255, 255, 0.1);
+	font-size: 16px;
 }
 
 .history-item-content {
@@ -567,6 +577,7 @@ If your plugin does not need CSS, delete this file.
 .history-item-title {
 	font-weight: 500;
 	margin-bottom: 4px;
+	color: var(--text-normal);
 }
 
 .history-item-time {
@@ -580,10 +591,14 @@ If your plugin does not need CSS, delete this file.
 	top: 50%;
 	transform: translateY(-50%);
 	opacity: 0;
-	transition: opacity 0.2s;
-	padding: 4px;
-	border-radius: 4px;
+	transition: all 0.2s ease;
+	padding: 8px;
+	border-radius: 6px;
+	background: rgba(255, 0, 0, 0.1);
 	color: var(--text-error);
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .history-item:hover .delete-chat {
