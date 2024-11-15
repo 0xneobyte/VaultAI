@@ -54,6 +54,12 @@ export default class GeminiChatbotPlugin extends Plugin {
 	private readonly MAX_CONTEXT_LENGTH = 30000 // Limit context length to avoid token limits
 
 	async onload() {
+		// Add Font Awesome CSS
+		const fontAwesomeLink = document.createElement('link');
+		fontAwesomeLink.rel = 'stylesheet';
+		fontAwesomeLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
+		document.head.appendChild(fontAwesomeLink);
+
 		await this.loadSettings()
 		if (this.settings.apiKey) {
 			this.initializeGeminiService()
@@ -307,7 +313,10 @@ export default class GeminiChatbotPlugin extends Plugin {
 			
 			<div class="bot-info">
 				<div class="bot-avatar">
-					<i class="fa-solid fa-brain"></i>
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-5 0v-15A2.5 2.5 0 0 1 9.5 2zM14.5 2A2.5 2.5 0 0 1 17 4.5v15a2.5 2.5 0 0 1-5 0v-15A2.5 2.5 0 0 1 14.5 2z"/>
+						<path d="M4.5 7A2.5 2.5 0 0 1 7 9.5v5A2.5 2.5 0 0 1 2 14.5v-5A2.5 2.5 0 0 1 4.5 7zM19.5 7A2.5 2.5 0 0 1 22 9.5v5a2.5 2.5 0 0 1-5 0v-5A2.5 2.5 0 0 1 19.5 7z"/>
+					</svg>
 				</div>
 				<div class="bot-greeting">Hello, How can I help you today?</div>
 			</div>
@@ -529,6 +538,12 @@ export default class GeminiChatbotPlugin extends Plugin {
 	}
 
 	onunload() {
+		// Remove Font Awesome CSS
+		const fontAwesomeLink = document.querySelector('link[href*="font-awesome"]');
+		if (fontAwesomeLink) {
+			fontAwesomeLink.remove();
+		}
+
 		this.chatIcon?.remove()
 		this.chatContainer?.remove()
 	}
