@@ -566,22 +566,28 @@ export default class GeminiChatbotPlugin extends Plugin {
 	}
 
 	private async toggleChatContainer() {
-		const isVisible = this.chatContainer.style.display !== "none"
-		this.chatContainer.style.display = isVisible ? "none" : "flex"
+		const isVisible = this.chatContainer.style.display !== "none";
+		
+		if (isVisible) {
+			// Add closing animation
+			this.chatContainer.classList.add("closing");
+			// Wait for animation to complete before hiding
+			await new Promise(resolve => setTimeout(resolve, 300));
+			this.chatContainer.style.display = "none";
+			this.chatContainer.classList.remove("closing");
+		} else {
+			this.chatContainer.style.display = "flex";
+			this.currentSession = this.createNewSession();
+			this.showMainChatView();
+			this.toggleSuggestedActions(true);
 
-		if (!isVisible) {
-			this.chatContainer.classList.add("slideIn")
-			this.currentSession = this.createNewSession()
-			this.showMainChatView()
-			this.toggleSuggestedActions(true)
-
-			const activeFile = this.app.workspace.getActiveFile()
+			const activeFile = this.app.workspace.getActiveFile();
 			if (activeFile) {
-				this.currentFileContent = await this.app.vault.read(activeFile)
-				this.updateChatHeader()
+				this.currentFileContent = await this.app.vault.read(activeFile);
+				this.updateChatHeader();
 			} else {
-				this.currentFileContent = null
-				this.updateChatHeader()
+				this.currentFileContent = null;
+				this.updateChatHeader();
 			}
 		}
 	}
