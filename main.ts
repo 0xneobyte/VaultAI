@@ -15,7 +15,6 @@ interface GeminiChatbotSettings {
 		y: number;
 	};
 	isDocked: boolean;
-	chatHistory: ChatMessage[];
 }
 
 const DEFAULT_SETTINGS: GeminiChatbotSettings = {
@@ -24,8 +23,7 @@ const DEFAULT_SETTINGS: GeminiChatbotSettings = {
 		x: 20,
 		y: 20
 	},
-	isDocked: false,
-	chatHistory: []
+	isDocked: false
 }
 
 export default class GeminiChatbotPlugin extends Plugin {
@@ -52,17 +50,6 @@ export default class GeminiChatbotPlugin extends Plugin {
 		
 		// Add chat container
 		this.addChatContainer();
-		
-		// Restore chat history
-		this.restoreChatHistory();
-	}
-	
-	private restoreChatHistory() {
-		if (!this.messagesContainer) return;
-		
-		this.settings.chatHistory.forEach(message => {
-			this.addMessageToChat(message);
-		});
 	}
 	
 	public initializeGeminiService() {
@@ -82,14 +69,18 @@ export default class GeminiChatbotPlugin extends Plugin {
 		// Hide suggested actions when sending a message
 		this.toggleSuggestedActions(false);
 		
+		// Add context about the current note
+		const contextMessage = this.currentFileContent 
+			? `Context from current note:\n${this.currentFileContent}\n\nUser question: ${message}`
+			: message;
+		
 		const userMessage: ChatMessage = {
 			role: 'user',
-			content: message,
+			content: message, // Show original message to user
 			timestamp: Date.now()
 		};
 		
 		this.addMessageToChat(userMessage);
-		this.settings.chatHistory.push(userMessage);
 		
 		// Add loading indicator
 		const loadingEl = document.createElement('div');
@@ -98,7 +89,8 @@ export default class GeminiChatbotPlugin extends Plugin {
 		this.messagesContainer?.appendChild(loadingEl);
 		
 		try {
-			const response = await this.geminiService.sendMessage(message);
+			// Send the context-enhanced message to Gemini
+			const response = await this.geminiService.sendMessage(contextMessage);
 			loadingEl.remove();
 			
 			const botMessage: ChatMessage = {
@@ -108,8 +100,6 @@ export default class GeminiChatbotPlugin extends Plugin {
 			};
 			
 			this.addMessageToChat(botMessage);
-			this.settings.chatHistory.push(botMessage);
-			await this.saveSettings();
 		} catch (error) {
 			loadingEl.remove();
 			this.addErrorMessage('Failed to get response from Gemini');
@@ -316,6 +306,11 @@ export default class GeminiChatbotPlugin extends Plugin {
 		this.chatContainer.style.display = isVisible ? 'none' : 'flex';
 		
 		if (!isVisible) {
+			// Clear previous messages when opening
+			if (this.messagesContainer) {
+				this.messagesContainer.innerHTML = '';
+			}
+			
 			// Get active file when opening chat
 			const activeFile = this.app.workspace.getActiveFile();
 			if (activeFile) {
