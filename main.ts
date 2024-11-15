@@ -1,6 +1,7 @@
 import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
 import { GeminiService } from './src/services/GeminiService';
 import { LanguageSelectionModal } from './src/modals/LanguageSelectionModal';
+import { MarkdownRenderer } from 'obsidian';
 
 interface ChatMessage {
 	role: 'user' | 'bot';
@@ -66,32 +67,33 @@ export default class GeminiChatbotPlugin extends Plugin {
 	private async handleMessage(message: string) {
 		if (!this.geminiService || !message.trim()) return;
 		
-		// Hide suggested actions when sending a message
 		this.toggleSuggestedActions(false);
 		
-		// Add context about the current note
 		const contextMessage = this.currentFileContent 
 			? `Context from current note:\n${this.currentFileContent}\n\nUser question: ${message}`
 			: message;
 		
 		const userMessage: ChatMessage = {
 			role: 'user',
-			content: message, // Show original message to user
+			content: message,
 			timestamp: Date.now()
 		};
 		
 		this.addMessageToChat(userMessage);
 		
-		// Add loading indicator
-		const loadingEl = document.createElement('div');
-		loadingEl.addClass('gemini-message-loading');
-		loadingEl.textContent = 'Thinking...';
-		this.messagesContainer?.appendChild(loadingEl);
+		// Add typing indicator
+		const typingIndicator = document.createElement('div');
+		typingIndicator.addClass('typing-indicator');
+		typingIndicator.innerHTML = `
+			<span></span>
+			<span></span>
+			<span></span>
+		`;
+		this.messagesContainer?.appendChild(typingIndicator);
 		
 		try {
-			// Send the context-enhanced message to Gemini
 			const response = await this.geminiService.sendMessage(contextMessage);
-			loadingEl.remove();
+			typingIndicator.remove();
 			
 			const botMessage: ChatMessage = {
 				role: 'bot',
@@ -99,19 +101,33 @@ export default class GeminiChatbotPlugin extends Plugin {
 				timestamp: Date.now()
 			};
 			
-			this.addMessageToChat(botMessage);
+			await this.addMessageToChat(botMessage);
 		} catch (error) {
-			loadingEl.remove();
+			typingIndicator.remove();
 			this.addErrorMessage('Failed to get response from Gemini');
 		}
 	}
 	
-	private addMessageToChat(message: ChatMessage) {
+	private async addMessageToChat(message: ChatMessage) {
 		if (!this.messagesContainer) return;
 		
 		const messageEl = document.createElement('div');
 		messageEl.addClass(`gemini-message-${message.role}`);
-		messageEl.textContent = message.content;
+		
+		if (message.role === 'bot') {
+			// Create a container for markdown content
+			const markdownContainer = messageEl.createDiv();
+			await MarkdownRenderer.renderMarkdown(
+				message.content,
+				markdownContainer,
+				'',
+				this
+			);
+		} else {
+			// For user messages, just use text
+			messageEl.textContent = message.content;
+		}
+		
 		this.messagesContainer.appendChild(messageEl);
 		this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
 	}
@@ -148,6 +164,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 		// Add chat components
 		this.chatContainer.innerHTML = `
 			<div class="gemini-chat-header">
+				<div class="current-file"></div>
 				<div class="chat-header-controls">
 					<button class="history-button">
 						<svg width="16" height="16" viewBox="0 0 24 24">
@@ -311,16 +328,18 @@ export default class GeminiChatbotPlugin extends Plugin {
 				this.messagesContainer.innerHTML = '';
 			}
 			
+			// Update header with current file name
+			this.updateChatHeader();
+			
 			// Get active file when opening chat
 			const activeFile = this.app.workspace.getActiveFile();
 			if (activeFile) {
-				// Store the active file content for use in suggested actions
 				this.app.vault.read(activeFile).then(content => {
 					this.currentFileContent = content;
 				});
 			}
 			
-			// Show suggested actions when opening chat
+			// Show suggested actions
 			this.toggleSuggestedActions(true);
 			this.chatContainer.style.bottom = '80px';
 			this.chatContainer.style.right = '20px';
@@ -353,6 +372,17 @@ export default class GeminiChatbotPlugin extends Plugin {
 		const suggestedActions = this.chatContainer.querySelector('.suggested-actions') as HTMLElement;
 		if (suggestedActions) {
 			suggestedActions.style.display = show ? 'block' : 'none';
+		}
+	}
+	
+	private updateChatHeader() {
+		const activeFile = this.app.workspace.getActiveFile();
+		const headerEl = this.chatContainer.querySelector('.current-file');
+		if (headerEl && activeFile) {
+			headerEl.textContent = activeFile.basename;
+			(headerEl as HTMLElement).style.display = 'block';
+		} else if (headerEl) {
+			(headerEl as HTMLElement).style.display = 'none';
 		}
 	}
 }
