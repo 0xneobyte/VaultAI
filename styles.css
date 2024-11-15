@@ -10,7 +10,7 @@ If your plugin does not need CSS, delete this file.
 /* Floating Chat Icon */
 .gemini-chat-icon {
     position: fixed;
-    bottom: 20px !important;
+    bottom: 40px !important;
     right: 20px !important;
     width: 40px;
     height: 40px;
@@ -24,6 +24,7 @@ If your plugin does not need CSS, delete this file.
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: all 0.2s ease;
     z-index: 1000;
+    padding: 8px;
 }
 
 .gemini-chat-icon:hover {
@@ -33,7 +34,7 @@ If your plugin does not need CSS, delete this file.
 /* Chat Container */
 .gemini-chat-container {
     position: fixed;
-    bottom: 80px !important;
+    bottom: 100px !important;
     right: 20px !important;
     width: 380px;
     height: 480px;
@@ -524,4 +525,36 @@ If your plugin does not need CSS, delete this file.
 
 .back-button:hover {
     background-color: var(--background-modifier-hover);
+}
+
+/* File Selection Modal */
+.suggestion-path {
+    font-size: 0.8em;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.suggestion-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.suggestion-item:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.suggestion-item.is-selected {
+    background-color: var(--background-modifier-hover);
+}
+
+/* Referenced File Tags */
+.chat-input-wrapper .reference-tag {
+    display: inline-block;
+    background-color: var(--background-modifier-hover);
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin: 0 2px;
+    font-size: 0.9em;
+    color: var(--text-accent);
 }

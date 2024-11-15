@@ -2,6 +2,7 @@ import { App, Plugin, PluginSettingTab, Setting } from "obsidian"
 import { GeminiService } from "./src/services/GeminiService"
 import { LanguageSelectionModal } from "./src/modals/LanguageSelectionModal"
 import { MarkdownRenderer } from "obsidian"
+import { FileSelectionModal } from "./src/modals/FileSelectionModal"
 
 interface ChatMessage {
 	role: "user" | "bot"
@@ -47,6 +48,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 	private chatHistory: ChatMessage[] = []
 	private isFullPage = false
 	private currentSession: ChatSession | null = null
+	private referencedFiles: Map<string, string> | null = null
 
 	async onload() {
 		await this.loadSettings()
@@ -80,17 +82,46 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 		this.toggleSuggestedActions(false)
 
-		const contextMessage = this.currentFileContent
-			? `Context from current note:\n${this.currentFileContent}\n\nUser question: ${message}`
-			: message
+		// Build context
+		let contextMessage = message
+		let context = ''
 
-		const userMessage: ChatMessage = {
-			role: "user",
-			content: message,
-			timestamp: Date.now(),
+		// Add referenced file content if any
+		const fileReferences = message.match(/@([^\s]+)/g)
+		if (fileReferences) {
+			contextMessage = message.replace(/@([^\s]+)/g, '').trim() // Remove @ references
+			fileReferences.forEach(ref => {
+				const fileName = ref.slice(1)
+				const fileContent = this.referencedFiles?.get(fileName)
+				if (fileContent) {
+					context += `\nContent from ${fileName}:\n${fileContent}\n`
+				}
+			})
 		}
 
-		await this.addMessageToChat(userMessage)
+		// Add current file content if available and no specific file was referenced
+		const activeFile = this.app.workspace.getActiveFile()
+		if (activeFile && !fileReferences) {
+			const content = await this.app.vault.read(activeFile)
+			context += `\nContent from current note:\n${content}\n`
+		}
+
+		// Prepare the final message
+		const finalMessage = context
+			? `${context}\n\nUser question: ${contextMessage}`
+			: contextMessage
+
+		const userMessage: ChatMessage = {
+			role: 'user',
+			content: finalMessage,
+			timestamp: Date.now()
+		}
+
+		// Show only the user's question in the chat
+		await this.addMessageToChat({
+			...userMessage,
+			content: contextMessage // Show only the actual question
+		})
 
 		// Add typing indicator
 		const typingIndicator = document.createElement("div")
@@ -103,7 +134,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 		this.messagesContainer?.appendChild(typingIndicator)
 
 		try {
-			const response = await this.geminiService.sendMessage(contextMessage)
+			const response = await this.geminiService.sendMessage(finalMessage)
 			typingIndicator.remove()
 
 			const botMessage: ChatMessage = {
@@ -138,16 +169,21 @@ export default class GeminiChatbotPlugin extends Plugin {
 	private async addMessageToChat(message: ChatMessage) {
 		if (!this.messagesContainer) return
 
-		const messageEl = document.createElement("div")
+		const messageEl = document.createElement('div')
 		messageEl.addClass(`gemini-message-${message.role}`)
 
-		if (message.role === "bot") {
+		if (message.role === 'bot') {
 			// Create a container for markdown content
 			const markdownContainer = messageEl.createDiv()
-			await MarkdownRenderer.renderMarkdown(message.content, markdownContainer, "", this)
+			
+			if (message.content) {
+				// Add typing animation for bot messages
+				await this.typeMessage(message.content, markdownContainer)
+			}
 		} else {
-			// For user messages, just use text
-			messageEl.textContent = message.content
+			// For user messages, just show the visible part (not the context)
+			const visibleContent = this.stripContextFromMessage(message.content)
+			messageEl.textContent = visibleContent
 		}
 
 		this.messagesContainer.appendChild(messageEl)
@@ -158,6 +194,44 @@ export default class GeminiChatbotPlugin extends Plugin {
 		if (this.currentSession) {
 			this.currentSession.messages.push(message)
 		}
+	}
+
+	// Add new method for typing animation
+	private async typeMessage(text: string, container: HTMLElement) {
+		// First render the markdown but keep it hidden
+		await MarkdownRenderer.renderMarkdown(text, container, '', this)
+		const elements = Array.from(container.children)
+		container.empty()
+
+		for (const element of elements) {
+			if (element instanceof HTMLElement) {
+				if (element.tagName === 'P') {
+					// For paragraphs, type each character
+					const text = element.textContent || ''
+					const p = container.createEl('p')
+					for (const char of text) {
+						p.textContent += char
+						await new Promise(resolve => setTimeout(resolve, 10)) // Adjust speed here
+						if (this.messagesContainer) {
+							this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight
+						}
+					}
+				} else {
+					// For other elements (code blocks, lists, etc.), add them instantly
+					container.appendChild(element)
+				}
+			}
+		}
+	}
+
+	// Add method to strip context from messages
+	private stripContextFromMessage(message: string): string {
+		// Remove the context part from the message
+		const userQuestionMatch = message.match(/User question: (.*?)$/m)
+		if (userQuestionMatch) {
+			return userQuestionMatch[1].trim()
+		}
+		return message
 	}
 
 	private addErrorMessage(message: string) {
@@ -387,6 +461,12 @@ export default class GeminiChatbotPlugin extends Plugin {
 			document.addEventListener("click", closeMenu)
 			document.body.appendChild(menu)
 		})
+
+		// Add @ button handler
+		const mentionButton = this.chatContainer.querySelector('.mention-button');
+		mentionButton?.addEventListener('click', () => {
+			this.showFileSelectionModal();
+		});
 	}
 
 	private showLanguageSelectionModal(content: string) {
@@ -409,26 +489,28 @@ export default class GeminiChatbotPlugin extends Plugin {
 		}).open()
 	}
 
-	private toggleChatContainer() {
+	private async toggleChatContainer() {
 		const isVisible = this.chatContainer.style.display !== 'none';
 		this.chatContainer.style.display = isVisible ? 'none' : 'flex';
 		
 		if (!isVisible) {
-			// Start new session when opening chat
+			// Start new session
 			this.currentSession = this.createNewSession();
 			
 			// Show main chat view with welcome screen
 			this.showMainChatView();
 			this.toggleSuggestedActions(true);
 			
-			// Update header with current file
-			this.updateChatHeader();
-			
+			// Check for active file
 			const activeFile = this.app.workspace.getActiveFile();
 			if (activeFile) {
-				this.app.vault.read(activeFile).then(content => {
-					this.currentFileContent = content;
-				});
+				// Store the content but don't show it in the UI
+				this.currentFileContent = await this.app.vault.read(activeFile);
+				// Update header with file name
+				this.updateChatHeader();
+			} else {
+				this.currentFileContent = null;
+				this.updateChatHeader();
 			}
 		}
 	}
@@ -799,6 +881,32 @@ export default class GeminiChatbotPlugin extends Plugin {
 				this.toggleSuggestedActions(true);
 			}
 		}
+	}
+
+	// Add this method to handle file selection
+	private async showFileSelectionModal() {
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const files = this.app.vault.getMarkdownFiles();
+		const modal = new FileSelectionModal(this.app, async (file) => {
+			if (file && this.inputField) {
+				const content = await this.app.vault.read(file);
+				// Add file reference to input at cursor position
+				const cursorPos = this.inputField.selectionStart;
+				const currentValue = this.inputField.value;
+				const newValue = 
+					currentValue.slice(0, cursorPos) + 
+					`@${file.basename} ` + 
+					currentValue.slice(cursorPos);
+				this.inputField.value = newValue;
+				
+				// Store the file content to be used in the prompt
+				this.referencedFiles = this.referencedFiles || new Map();
+				this.referencedFiles.set(file.basename, content);
+				
+				this.inputField.focus();
+			}
+		});
+		modal.open();
 	}
 }
 
