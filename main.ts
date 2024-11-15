@@ -307,9 +307,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 			
 			<div class="bot-info">
 				<div class="bot-avatar">
-					<svg width="24" height="24" viewBox="0 0 24 24">
-						<path fill="currentColor" d="M13 3c.6 0 1 .4 1 1v4c0 .6-.4 1-1 1h-1v2h5v-2h-1c-.6 0-1-.4-1-1V4c0-.6.4-1 1-1h3c.6 0 1 .4 1 1v4c0 .6-.4 1-1 1h-1v2h5v-2h-1c-.6 0-1-.4-1-1V4c0-.6.4-1 1-1h3zm-7 12h-2v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/>
-					</svg>
+					<i class="fa-solid fa-brain"></i>
 				</div>
 				<div class="bot-greeting">Hello, How can I help you today?</div>
 			</div>

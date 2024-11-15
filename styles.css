@@ -99,9 +99,8 @@ If your plugin does not need CSS, delete this file.
 	padding: 8px;
 }
 
-.bot-avatar svg {
-	width: 24px;
-	height: 24px;
+.bot-avatar i {
+	font-size: 24px;
 	color: var(--text-normal);
 	opacity: 0.8;
 }
