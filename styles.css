@@ -324,3 +324,63 @@ If your plugin does not need CSS, delete this file.
 .gemini-message-bot p:last-child {
     margin-bottom: 0;
 }
+
+/* More Options Menu */
+.more-options-menu {
+    position: fixed;
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1001;
+    min-width: 180px;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    color: var(--text-normal);
+}
+
+.menu-item:hover {
+    background: var(--background-modifier-hover);
+}
+
+.menu-item svg {
+    opacity: 0.7;
+}
+
+/* Full Page Mode */
+.gemini-chat-container.full-page {
+    top: 20px;
+    left: 20px;
+    right: 20px !important;
+    bottom: 20px !important;
+    width: auto;
+    height: auto;
+    animation: expandToFull 0.3s ease-out;
+}
+
+@keyframes expandToFull {
+    from {
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Update chat messages container for full page */
+.gemini-chat-container.full-page .gemini-chat-messages {
+    flex: 1;
+}
+
+/* History button active state */
+.history-button.active {
+    color: var(--interactive-accent);
+}

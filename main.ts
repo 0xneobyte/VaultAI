@@ -35,10 +35,11 @@ export default class GeminiChatbotPlugin extends Plugin {
 	private messagesContainer: HTMLElement | null = null;
 	private inputField: HTMLTextAreaElement | null = null;
 	private currentFileContent: string | null = null;
+	private chatHistory: ChatMessage[] = [];
+	private isFullPage = false;
 	
 	async onload() {
 		await this.loadSettings();
-		
 		if (this.settings.apiKey) {
 			this.initializeGeminiService();
 		}
@@ -130,6 +131,8 @@ export default class GeminiChatbotPlugin extends Plugin {
 		
 		this.messagesContainer.appendChild(messageEl);
 		this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+		
+		this.chatHistory.push(message);
 	}
 	
 	private addErrorMessage(message: string) {
@@ -297,6 +300,69 @@ export default class GeminiChatbotPlugin extends Plugin {
 				}
 			});
 		});
+		
+		// Add history button handler
+		const historyButton = this.chatContainer.querySelector('.history-button');
+		historyButton?.addEventListener('click', () => {
+			if (this.messagesContainer) {
+				this.messagesContainer.innerHTML = '';
+				this.chatHistory.forEach(message => {
+					this.addMessageToChat(message);
+				});
+				this.toggleSuggestedActions(false);
+			}
+		});
+		
+		// Add more options menu
+		const moreButton = this.chatContainer.querySelector('.more-button');
+		moreButton?.addEventListener('click', (event) => {
+			const menu = document.createElement('div');
+			menu.addClass('more-options-menu');
+			menu.innerHTML = `
+				<div class="menu-item toggle-full-page">
+					<svg width="16" height="16" viewBox="0 0 24 24">
+						<path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+					</svg>
+					Toggle Full Page
+				</div>
+				<div class="menu-item clear-history">
+					<svg width="16" height="16" viewBox="0 0 24 24">
+						<path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14l2.12 2.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.13-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/>
+					</svg>
+					Clear History
+				</div>
+			`;
+			
+			// Position the menu
+			const rect = (event.target as HTMLElement).getBoundingClientRect();
+			menu.style.top = `${rect.bottom + 5}px`;
+			menu.style.right = `${window.innerWidth - rect.right}px`;
+			
+			// Add menu item handlers
+			menu.querySelector('.toggle-full-page')?.addEventListener('click', () => {
+				this.toggleFullPageChat();
+				menu.remove();
+			});
+			
+			menu.querySelector('.clear-history')?.addEventListener('click', () => {
+				this.chatHistory = [];
+				if (this.messagesContainer) {
+					this.messagesContainer.innerHTML = '';
+				}
+				menu.remove();
+			});
+			
+			// Close menu when clicking outside
+			const closeMenu = (e: MouseEvent) => {
+				if (!menu.contains(e.target as Node)) {
+					menu.remove();
+					document.removeEventListener('click', closeMenu);
+				}
+			};
+			
+			document.addEventListener('click', closeMenu);
+			document.body.appendChild(menu);
+		});
 	}
 	
 	private showLanguageSelectionModal(content: string) {
@@ -383,6 +449,16 @@ export default class GeminiChatbotPlugin extends Plugin {
 			(headerEl as HTMLElement).style.display = 'block';
 		} else if (headerEl) {
 			(headerEl as HTMLElement).style.display = 'none';
+		}
+	}
+	
+	// Add this method to handle full page toggle
+	private toggleFullPageChat() {
+		this.isFullPage = !this.isFullPage;
+		if (this.isFullPage) {
+			this.chatContainer.addClass('full-page');
+		} else {
+			this.chatContainer.removeClass('full-page');
 		}
 	}
 }
