@@ -313,10 +313,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 			
 			<div class="bot-info">
 				<div class="bot-avatar">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-5 0v-15A2.5 2.5 0 0 1 9.5 2zM14.5 2A2.5 2.5 0 0 1 17 4.5v15a2.5 2.5 0 0 1-5 0v-15A2.5 2.5 0 0 1 14.5 2z"/>
-						<path d="M4.5 7A2.5 2.5 0 0 1 7 9.5v5A2.5 2.5 0 0 1 2 14.5v-5A2.5 2.5 0 0 1 4.5 7zM19.5 7A2.5 2.5 0 0 1 22 9.5v5a2.5 2.5 0 0 1-5 0v-5A2.5 2.5 0 0 1 19.5 7z"/>
-					</svg>
+					<i class="fa-solid fa-brain"></i>
 				</div>
 				<div class="bot-greeting">Hello, How can I help you today?</div>
 			</div>
@@ -347,11 +344,6 @@ export default class GeminiChatbotPlugin extends Plugin {
 				<div class="chat-input-wrapper">
 					<textarea class="chat-input" placeholder="Ask anything or select..."></textarea>
 					<div class="input-actions">
-						<button class="attach-button">
-							<svg width="16" height="16" viewBox="0 0 24 24">
-								<path fill="currentColor" d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 0 1 5 0v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5a2.5 2.5 0 0 0 5 0V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/>
-							</svg>
-						</button>
 						<button class="mention-button">@</button>
 						<button class="send-button">↑</button>
 					</div>
