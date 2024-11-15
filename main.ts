@@ -795,30 +795,34 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 	// Update showChatHistoryView method
 	private showChatHistoryView() {
-		if (!this.chatContainer) return
+		if (!this.chatContainer) return;
 
 		// Hide all other elements
 		const elementsToHide = [
-			".bot-info",
-			".suggested-actions",
-			".chat-input-container",
-			".gemini-chat-messages",
-		]
-
-		elementsToHide.forEach((selector) => {
-			const el = this.chatContainer.querySelector(selector)
-			if (el) (el as HTMLElement).style.display = "none"
-		})
+			'.bot-info',
+			'.suggested-actions',
+			'.chat-input-container',
+			'.gemini-chat-messages'
+		];
+		
+		elementsToHide.forEach(selector => {
+			const el = this.chatContainer.querySelector(selector);
+			if (el) (el as HTMLElement).style.display = 'none';
+		});
 
 		// Remove existing history view if any
-		const existingHistoryView = this.chatContainer.querySelector(".chat-history-view")
+		const existingHistoryView = this.chatContainer.querySelector('.chat-history-view');
 		if (existingHistoryView) {
-			existingHistoryView.remove()
+			existingHistoryView.classList.add('closing');
+			setTimeout(() => {
+				existingHistoryView.remove();
+			}, 300);
+			return;
 		}
 
 		// Create and show history view
-		const historyView = document.createElement("div")
-		historyView.addClass("chat-history-view")
+		const historyView = document.createElement('div');
+		historyView.addClass('chat-history-view');
 		historyView.innerHTML = `
 			<div class="chat-history-header">
 				<div class="back-button">
@@ -837,35 +841,39 @@ export default class GeminiChatbotPlugin extends Plugin {
 			</div>
 		`
 
-		this.chatContainer.appendChild(historyView)
+		this.chatContainer.appendChild(historyView);
+
+		// Add back button handler with animation
+		const backBtn = historyView.querySelector('.back-button');
+		backBtn?.addEventListener('click', () => {
+			historyView.classList.add('closing');
+			setTimeout(() => {
+				historyView.remove();
+				this.showMainChatView();
+			}, 300);
+		});
 
 		// Add event listeners
-		const backBtn = historyView.querySelector(".back-button")
-		backBtn?.addEventListener("click", () => {
-			historyView.remove()
-			this.showMainChatView()
-		})
-
-		const newChatBtn = historyView.querySelector(".new-chat-button")
-		newChatBtn?.addEventListener("click", () => {
-			this.currentSession = this.createNewSession()
-			historyView.remove()
-			this.showMainChatView()
-		})
+		const newChatBtn = historyView.querySelector('.new-chat-button');
+		newChatBtn?.addEventListener('click', () => {
+			this.currentSession = this.createNewSession();
+			historyView.remove();
+			this.showMainChatView();
+		});
 
 		// Add click handlers for history items
-		this.attachHistoryItemListeners(historyView)
+		this.attachHistoryItemListeners(historyView);
 
-		const searchInput = historyView.querySelector("input")
-		searchInput?.addEventListener("input", (e) => {
-			const query = (e.target as HTMLInputElement).value
-			this.filterChatHistory(query)
-		})
+		const searchInput = historyView.querySelector('input');
+		searchInput?.addEventListener('input', (e) => {
+			const query = (e.target as HTMLInputElement).value;
+			this.filterChatHistory(query);
+		});
 	}
 
 	// Update renderHistorySection to include delete button
 	private renderHistorySection(title: string, sessions: ChatSession[]): string {
-		if (sessions.length === 0) return ""
+		if (sessions.length === 0) return "";
 
 		return `
 			<div class="history-section">

@@ -508,6 +508,11 @@ If your plugin does not need CSS, delete this file.
 	z-index: 1001;
 	display: flex;
 	flex-direction: column;
+	animation: slideInHistory 0.3s ease-out;
+}
+
+.chat-history-view.closing {
+	animation: slideOutHistory 0.3s ease-out;
 }
 
 .chat-history-header {
@@ -1067,4 +1072,45 @@ If your plugin does not need CSS, delete this file.
 .history-item.deleting {
 	animation: fadeOut 0.3s ease-out;
 	pointer-events: none;
+}
+
+/* Add these animations for history view */
+@keyframes slideInHistory {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOutHistory {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+}
+
+/* Update the chat history view with animation */
+.chat-history-view {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--background-primary);
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    animation: slideInHistory 0.3s ease-out;
+}
+
+.chat-history-view.closing {
+    animation: slideOutHistory 0.3s ease-out;
 }
