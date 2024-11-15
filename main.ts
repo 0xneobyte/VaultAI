@@ -385,45 +385,52 @@ export default class GeminiChatbotPlugin extends Plugin {
 		})
 
 		// Update action buttons handlers
-		const actionButtons = this.chatContainer.querySelectorAll(".action-button")
+		const actionButtons = this.chatContainer.querySelectorAll(".action-button");
 		actionButtons.forEach((button) => {
-			button.addEventListener("click", async () => {
-				const action = button.textContent?.trim()
+			button.addEventListener("click", () => {
+				const action = button.textContent?.trim();
+				if (!action) return;
 
-				if (!this.currentFileContent) {
-					this.addErrorMessage("No active file selected")
-					return
+				// Get current file content
+				const activeFile = this.app.workspace.getActiveFile();
+				if (!activeFile) {
+					this.addErrorMessage("No active file selected");
+					return;
 				}
 
-				// Hide suggested actions when selecting an action
-				this.toggleSuggestedActions(false)
-
+				// Create the appropriate prompt based on the action
+				let prompt = "";
 				switch (action) {
 					case "Summarize this page":
-						this.handleMessage(
-							`Please provide a concise summary of this content:\n${this.currentFileContent}`,
-						)
-						break
-
+						prompt = "Please provide a concise summary of this page";
+						break;
 					case "Ask about this page":
 						if (this.inputField) {
-							this.inputField.focus()
-							this.inputField.placeholder = "Ask a question about this page..."
+							this.inputField.focus();
+							this.inputField.placeholder = "Ask a question about this page...";
+							return; // Exit as this case doesn't send a prompt
 						}
-						break
-
+						break;
 					case "Find action items":
-						this.handleMessage(
-							`Please analyze this content and list all action items, tasks, and to-dos:\n${this.currentFileContent}`,
-						)
-						break
-
+						prompt = "Please list all action items, tasks, and to-dos from this page";
+						break;
 					case "Translate to":
-						this.showLanguageSelectionModal(this.currentFileContent)
-						break
+						// Show language selection modal
+						new LanguageSelectionModal(this.app, (language: string) => {
+							const translationPrompt = `Please translate this content to ${language}`;
+							this.handleMessage(translationPrompt);
+						}).open();
+						return;
+					default:
+						return;
 				}
-			})
-		})
+
+				// If we have a prompt, send it
+				if (prompt) {
+					this.handleMessage(prompt);
+				}
+			});
+		});
 
 		// Update history button handler
 		const historyButton = this.chatContainer.querySelector(".history-button")
