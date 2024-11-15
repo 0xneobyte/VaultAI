@@ -1,169 +1,194 @@
-import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
-import { GeminiService } from './src/services/GeminiService';
-import { LanguageSelectionModal } from './src/modals/LanguageSelectionModal';
-import { MarkdownRenderer } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting } from "obsidian"
+import { GeminiService } from "./src/services/GeminiService"
+import { LanguageSelectionModal } from "./src/modals/LanguageSelectionModal"
+import { MarkdownRenderer } from "obsidian"
 
 interface ChatMessage {
-	role: 'user' | 'bot';
-	content: string;
-	timestamp: number;
+	role: "user" | "bot"
+	content: string
+	timestamp: number
+}
+
+interface ChatSession {
+	id: string
+	title: string
+	timestamp: number
+	messages: ChatMessage[]
 }
 
 interface GeminiChatbotSettings {
-	apiKey: string;
+	apiKey: string
 	floatingPosition: {
-		x: number;
-		y: number;
-	};
-	isDocked: boolean;
+		x: number
+		y: number
+	}
+	isDocked: boolean
+	chatSessions: ChatSession[]
 }
 
 const DEFAULT_SETTINGS: GeminiChatbotSettings = {
-	apiKey: '',
+	apiKey: "",
 	floatingPosition: {
 		x: 20,
-		y: 20
+		y: 20,
 	},
-	isDocked: false
+	isDocked: false,
+	chatSessions: [],
 }
 
 export default class GeminiChatbotPlugin extends Plugin {
-	settings: GeminiChatbotSettings;
-	chatIcon: HTMLElement;
-	chatContainer: HTMLElement;
-	private geminiService: GeminiService | null = null;
-	private messagesContainer: HTMLElement | null = null;
-	private inputField: HTMLTextAreaElement | null = null;
-	private currentFileContent: string | null = null;
-	private chatHistory: ChatMessage[] = [];
-	private isFullPage = false;
-	
+	settings: GeminiChatbotSettings
+	chatIcon: HTMLElement
+	chatContainer: HTMLElement
+	private geminiService: GeminiService | null = null
+	private messagesContainer: HTMLElement | null = null
+	private inputField: HTMLTextAreaElement | null = null
+	private currentFileContent: string | null = null
+	private chatHistory: ChatMessage[] = []
+	private isFullPage = false
+	private currentSession: ChatSession | null = null
+
 	async onload() {
-		await this.loadSettings();
+		await this.loadSettings()
 		if (this.settings.apiKey) {
-			this.initializeGeminiService();
+			this.initializeGeminiService()
 		}
-		
+
 		// Add settings tab
-		this.addSettingTab(new GeminiChatbotSettingTab(this.app, this));
-		
+		this.addSettingTab(new GeminiChatbotSettingTab(this.app, this))
+
 		// Add floating chat icon
-		this.addFloatingIcon();
-		
+		this.addFloatingIcon()
+
 		// Add chat container
-		this.addChatContainer();
+		this.addChatContainer()
 	}
-	
+
 	public initializeGeminiService() {
 		try {
 			if (this.settings.apiKey) {
-				const decryptedKey = this.decryptApiKey(this.settings.apiKey);
-				this.geminiService = new GeminiService(decryptedKey);
+				const decryptedKey = this.decryptApiKey(this.settings.apiKey)
+				this.geminiService = new GeminiService(decryptedKey)
 			}
 		} catch (error) {
-			console.error('Failed to initialize Gemini service:', error);
+			console.error("Failed to initialize Gemini service:", error)
 		}
 	}
-	
+
 	private async handleMessage(message: string) {
-		if (!this.geminiService || !message.trim()) return;
-		
-		this.toggleSuggestedActions(false);
-		
-		const contextMessage = this.currentFileContent 
+		if (!this.geminiService || !message.trim()) return
+
+		this.toggleSuggestedActions(false)
+
+		const contextMessage = this.currentFileContent
 			? `Context from current note:\n${this.currentFileContent}\n\nUser question: ${message}`
-			: message;
-		
+			: message
+
 		const userMessage: ChatMessage = {
-			role: 'user',
+			role: "user",
 			content: message,
-			timestamp: Date.now()
-		};
-		
-		this.addMessageToChat(userMessage);
-		
+			timestamp: Date.now(),
+		}
+
+		await this.addMessageToChat(userMessage)
+
 		// Add typing indicator
-		const typingIndicator = document.createElement('div');
-		typingIndicator.addClass('typing-indicator');
+		const typingIndicator = document.createElement("div")
+		typingIndicator.addClass("typing-indicator")
 		typingIndicator.innerHTML = `
 			<span></span>
 			<span></span>
 			<span></span>
-		`;
-		this.messagesContainer?.appendChild(typingIndicator);
-		
+		`
+		this.messagesContainer?.appendChild(typingIndicator)
+
 		try {
-			const response = await this.geminiService.sendMessage(contextMessage);
-			typingIndicator.remove();
-			
+			const response = await this.geminiService.sendMessage(contextMessage)
+			typingIndicator.remove()
+
 			const botMessage: ChatMessage = {
-				role: 'bot',
+				role: "bot",
 				content: response,
-				timestamp: Date.now()
-			};
-			
-			await this.addMessageToChat(botMessage);
+				timestamp: Date.now(),
+			}
+
+			await this.addMessageToChat(botMessage)
+
+			// Save the current session after each message exchange
+			if (this.currentSession) {
+				// Update session title after first exchange
+				if (this.currentSession.messages.length === 2) { // After first user message and bot response
+					this.currentSession.title = this.generateSessionTitle(userMessage.content)
+				}
+				
+				// Update sessions array
+				this.settings.chatSessions = [
+					this.currentSession,
+					...this.settings.chatSessions.filter((s) => s.id !== this.currentSession?.id),
+				]
+				
+				await this.saveSettings()
+			}
 		} catch (error) {
-			typingIndicator.remove();
-			this.addErrorMessage('Failed to get response from Gemini');
+			typingIndicator.remove()
+			this.addErrorMessage("Failed to get response from Gemini")
 		}
 	}
-	
+
 	private async addMessageToChat(message: ChatMessage) {
-		if (!this.messagesContainer) return;
-		
-		const messageEl = document.createElement('div');
-		messageEl.addClass(`gemini-message-${message.role}`);
-		
-		if (message.role === 'bot') {
+		if (!this.messagesContainer) return
+
+		const messageEl = document.createElement("div")
+		messageEl.addClass(`gemini-message-${message.role}`)
+
+		if (message.role === "bot") {
 			// Create a container for markdown content
-			const markdownContainer = messageEl.createDiv();
-			await MarkdownRenderer.renderMarkdown(
-				message.content,
-				markdownContainer,
-				'',
-				this
-			);
+			const markdownContainer = messageEl.createDiv()
+			await MarkdownRenderer.renderMarkdown(message.content, markdownContainer, "", this)
 		} else {
 			// For user messages, just use text
-			messageEl.textContent = message.content;
+			messageEl.textContent = message.content
 		}
-		
-		this.messagesContainer.appendChild(messageEl);
-		this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
-		
-		this.chatHistory.push(message);
+
+		this.messagesContainer.appendChild(messageEl)
+		this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight
+
+		this.chatHistory.push(message)
+
+		if (this.currentSession) {
+			this.currentSession.messages.push(message)
+		}
 	}
-	
+
 	private addErrorMessage(message: string) {
-		if (!this.messagesContainer) return;
-		
-		const errorEl = document.createElement('div');
-		errorEl.addClass('gemini-message-error');
-		errorEl.textContent = message;
-		this.messagesContainer.appendChild(errorEl);
+		if (!this.messagesContainer) return
+
+		const errorEl = document.createElement("div")
+		errorEl.addClass("gemini-message-error")
+		errorEl.textContent = message
+		this.messagesContainer.appendChild(errorEl)
 	}
-	
+
 	private addFloatingIcon() {
-		this.chatIcon = document.createElement('div');
-		this.chatIcon.addClass('gemini-chat-icon');
+		this.chatIcon = document.createElement("div")
+		this.chatIcon.addClass("gemini-chat-icon")
 		this.chatIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 			<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-		</svg>`;
-		
+		</svg>`
+
 		// Add click handler
-		this.chatIcon.addEventListener('click', () => {
-			this.toggleChatContainer();
-		});
-		
-		document.body.appendChild(this.chatIcon);
+		this.chatIcon.addEventListener("click", () => {
+			this.toggleChatContainer()
+		})
+
+		document.body.appendChild(this.chatIcon)
 	}
-	
+
 	private addChatContainer() {
-		this.chatContainer = document.createElement('div');
-		this.chatContainer.addClass('gemini-chat-container');
-		this.chatContainer.style.display = 'none';
-		
+		this.chatContainer = document.createElement("div")
+		this.chatContainer.addClass("gemini-chat-container")
+		this.chatContainer.style.display = "none"
+
 		// Add chat components
 		this.chatContainer.innerHTML = `
 			<div class="gemini-chat-header">
@@ -224,100 +249,99 @@ export default class GeminiChatbotPlugin extends Plugin {
 					</div>
 				</div>
 			</div>
-		`;
-		
-		document.body.appendChild(this.chatContainer);
-		
+		`
+
+		document.body.appendChild(this.chatContainer)
+
 		// Add event listeners for the buttons
-		this.addChatEventListeners();
+		this.addChatEventListeners()
 	}
-	
+
 	private addChatEventListeners() {
-		const closeButton = this.chatContainer.querySelector('.close-button');
-		closeButton?.addEventListener('click', () => {
-			this.toggleChatContainer();
-		});
-		
-		const sendButton = this.chatContainer.querySelector('.send-button');
-		const inputField = this.chatContainer.querySelector('.chat-input') as HTMLTextAreaElement;
-		this.inputField = inputField;
-		this.messagesContainer = this.chatContainer.querySelector('.gemini-chat-messages');
-		
-		sendButton?.addEventListener('click', () => {
+		const closeButton = this.chatContainer.querySelector(".close-button")
+		closeButton?.addEventListener("click", () => {
+			this.toggleChatContainer()
+		})
+
+		const sendButton = this.chatContainer.querySelector(".send-button")
+		const inputField = this.chatContainer.querySelector(".chat-input") as HTMLTextAreaElement
+		this.inputField = inputField
+		this.messagesContainer = this.chatContainer.querySelector(".gemini-chat-messages")
+
+		sendButton?.addEventListener("click", () => {
 			if (this.inputField) {
-				const message = this.inputField.value.trim();
+				const message = this.inputField.value.trim()
 				if (message) {
-					this.handleMessage(message);
-					this.inputField.value = '';
+					this.handleMessage(message)
+					this.inputField.value = ""
 				}
 			}
-		});
-		
-		inputField?.addEventListener('keydown', (e: KeyboardEvent) => {
-			if (e.key === 'Enter' && !e.shiftKey && this.inputField) {
-				e.preventDefault();
-				const message = this.inputField.value.trim();
+		})
+
+		inputField?.addEventListener("keydown", (e: KeyboardEvent) => {
+			if (e.key === "Enter" && !e.shiftKey && this.inputField) {
+				e.preventDefault()
+				const message = this.inputField.value.trim()
 				if (message) {
-					this.handleMessage(message);
-					this.inputField.value = '';
+					this.handleMessage(message)
+					this.inputField.value = ""
 				}
 			}
-		});
-		
+		})
+
 		// Update action buttons handlers
-		const actionButtons = this.chatContainer.querySelectorAll('.action-button');
-		actionButtons.forEach(button => {
-			button.addEventListener('click', async () => {
-				const action = button.textContent?.trim();
-				
+		const actionButtons = this.chatContainer.querySelectorAll(".action-button")
+		actionButtons.forEach((button) => {
+			button.addEventListener("click", async () => {
+				const action = button.textContent?.trim()
+
 				if (!this.currentFileContent) {
-					this.addErrorMessage('No active file selected');
-					return;
+					this.addErrorMessage("No active file selected")
+					return
 				}
-				
+
 				// Hide suggested actions when selecting an action
-				this.toggleSuggestedActions(false);
-				
-				switch(action) {
-					case 'Summarize this page':
-						this.handleMessage(`Please provide a concise summary of this content:\n${this.currentFileContent}`);
-						break;
-						
-					case 'Ask about this page':
+				this.toggleSuggestedActions(false)
+
+				switch (action) {
+					case "Summarize this page":
+						this.handleMessage(
+							`Please provide a concise summary of this content:\n${this.currentFileContent}`,
+						)
+						break
+
+					case "Ask about this page":
 						if (this.inputField) {
-							this.inputField.focus();
-							this.inputField.placeholder = 'Ask a question about this page...';
+							this.inputField.focus()
+							this.inputField.placeholder = "Ask a question about this page..."
 						}
-						break;
-						
-					case 'Find action items':
-						this.handleMessage(`Please analyze this content and list all action items, tasks, and to-dos:\n${this.currentFileContent}`);
-						break;
-						
-					case 'Translate to':
-						this.showLanguageSelectionModal(this.currentFileContent);
-						break;
+						break
+
+					case "Find action items":
+						this.handleMessage(
+							`Please analyze this content and list all action items, tasks, and to-dos:\n${this.currentFileContent}`,
+						)
+						break
+
+					case "Translate to":
+						this.showLanguageSelectionModal(this.currentFileContent)
+						break
 				}
-			});
-		});
-		
-		// Add history button handler
-		const historyButton = this.chatContainer.querySelector('.history-button');
-		historyButton?.addEventListener('click', () => {
-			if (this.messagesContainer) {
-				this.messagesContainer.innerHTML = '';
-				this.chatHistory.forEach(message => {
-					this.addMessageToChat(message);
-				});
-				this.toggleSuggestedActions(false);
-			}
-		});
-		
+			})
+		})
+
+		// Update history button handler
+		const historyButton = this.chatContainer.querySelector(".history-button")
+		historyButton?.addEventListener("click", () => {
+			// Show chat history view instead of just showing messages
+			this.showChatHistoryView()
+		})
+
 		// Add more options menu
-		const moreButton = this.chatContainer.querySelector('.more-button');
-		moreButton?.addEventListener('click', (event) => {
-			const menu = document.createElement('div');
-			menu.addClass('more-options-menu');
+		const moreButton = this.chatContainer.querySelector(".more-button")
+		moreButton?.addEventListener("click", (event) => {
+			const menu = document.createElement("div")
+			menu.addClass("more-options-menu")
 			menu.innerHTML = `
 				<div class="menu-item toggle-full-page">
 					<svg width="16" height="16" viewBox="0 0 24 24">
@@ -331,184 +355,498 @@ export default class GeminiChatbotPlugin extends Plugin {
 					</svg>
 					Clear History
 				</div>
-			`;
-			
+			`
+
 			// Position the menu
-			const rect = (event.target as HTMLElement).getBoundingClientRect();
-			menu.style.top = `${rect.bottom + 5}px`;
-			menu.style.right = `${window.innerWidth - rect.right}px`;
-			
+			const rect = (event.target as HTMLElement).getBoundingClientRect()
+			menu.style.top = `${rect.bottom + 5}px`
+			menu.style.right = `${window.innerWidth - rect.right}px`
+
 			// Add menu item handlers
-			menu.querySelector('.toggle-full-page')?.addEventListener('click', () => {
-				this.toggleFullPageChat();
-				menu.remove();
-			});
-			
-			menu.querySelector('.clear-history')?.addEventListener('click', () => {
-				this.chatHistory = [];
+			menu.querySelector(".toggle-full-page")?.addEventListener("click", () => {
+				this.toggleFullPageChat()
+				menu.remove()
+			})
+
+			menu.querySelector(".clear-history")?.addEventListener("click", () => {
+				this.chatHistory = []
 				if (this.messagesContainer) {
-					this.messagesContainer.innerHTML = '';
+					this.messagesContainer.innerHTML = ""
 				}
-				menu.remove();
-			});
-			
+				menu.remove()
+			})
+
 			// Close menu when clicking outside
 			const closeMenu = (e: MouseEvent) => {
 				if (!menu.contains(e.target as Node)) {
-					menu.remove();
-					document.removeEventListener('click', closeMenu);
+					menu.remove()
+					document.removeEventListener("click", closeMenu)
 				}
-			};
-			
-			document.addEventListener('click', closeMenu);
-			document.body.appendChild(menu);
-		});
+			}
+
+			document.addEventListener("click", closeMenu)
+			document.body.appendChild(menu)
+		})
 	}
-	
+
 	private showLanguageSelectionModal(content: string) {
 		new LanguageSelectionModal(this.app, (language: string) => {
 			if (this.geminiService) {
-				this.geminiService.translateContent(content, language)
-					.then(translation => {
+				this.geminiService
+					.translateContent(content, language)
+					.then((translation) => {
 						this.addMessageToChat({
-							role: 'bot',
+							role: "bot",
 							content: translation,
-							timestamp: Date.now()
-						});
+							timestamp: Date.now(),
+						})
 					})
-					.catch(error => {
-						this.addErrorMessage('Translation failed');
-						console.error('Translation error:', error);
-					});
+					.catch((error) => {
+						this.addErrorMessage("Translation failed")
+						console.error("Translation error:", error)
+					})
 			}
-		}).open();
+		}).open()
 	}
-	
+
 	private toggleChatContainer() {
 		const isVisible = this.chatContainer.style.display !== 'none';
 		this.chatContainer.style.display = isVisible ? 'none' : 'flex';
 		
 		if (!isVisible) {
-			// Clear previous messages when opening
-			if (this.messagesContainer) {
-				this.messagesContainer.innerHTML = '';
-			}
+			// Start new session when opening chat
+			this.currentSession = this.createNewSession();
 			
-			// Update header with current file name
+			// Show main chat view with welcome screen
+			this.showMainChatView();
+			this.toggleSuggestedActions(true);
+			
+			// Update header with current file
 			this.updateChatHeader();
 			
-			// Get active file when opening chat
 			const activeFile = this.app.workspace.getActiveFile();
 			if (activeFile) {
 				this.app.vault.read(activeFile).then(content => {
 					this.currentFileContent = content;
 				});
 			}
-			
-			// Show suggested actions
-			this.toggleSuggestedActions(true);
-			this.chatContainer.style.bottom = '80px';
-			this.chatContainer.style.right = '20px';
 		}
 	}
-	
+
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData())
 	}
-	
+
 	async saveSettings() {
-		await this.saveData(this.settings);
+		await this.saveData(this.settings)
 	}
-	
+
 	onunload() {
-		this.chatIcon?.remove();
-		this.chatContainer?.remove();
+		this.chatIcon?.remove()
+		this.chatContainer?.remove()
 	}
-	
+
 	public encryptApiKey(key: string): string {
-		return btoa(key.split('').reverse().join(''));
+		return btoa(key.split("").reverse().join(""))
 	}
-	
+
 	public decryptApiKey(encryptedKey: string): string {
-		return atob(encryptedKey).split('').reverse().join('');
+		return atob(encryptedKey).split("").reverse().join("")
 	}
-	
+
 	// Add this method to handle showing/hiding suggested actions
 	private toggleSuggestedActions(show: boolean) {
-		const suggestedActions = this.chatContainer.querySelector('.suggested-actions') as HTMLElement;
+		const suggestedActions = this.chatContainer.querySelector(".suggested-actions") as HTMLElement
 		if (suggestedActions) {
-			suggestedActions.style.display = show ? 'block' : 'none';
+			suggestedActions.style.display = show ? "block" : "none"
 		}
 	}
-	
+
 	private updateChatHeader() {
-		const activeFile = this.app.workspace.getActiveFile();
-		const headerEl = this.chatContainer.querySelector('.current-file');
+		const activeFile = this.app.workspace.getActiveFile()
+		const headerEl = this.chatContainer.querySelector(".current-file")
 		if (headerEl && activeFile) {
-			headerEl.textContent = activeFile.basename;
-			(headerEl as HTMLElement).style.display = 'block';
+			headerEl.textContent = activeFile.basename
+			;(headerEl as HTMLElement).style.display = "block"
 		} else if (headerEl) {
-			(headerEl as HTMLElement).style.display = 'none';
+			(headerEl as HTMLElement).style.display = "none"
 		}
 	}
-	
+
 	// Add this method to handle full page toggle
 	private toggleFullPageChat() {
-		this.isFullPage = !this.isFullPage;
+		this.isFullPage = !this.isFullPage
 		if (this.isFullPage) {
-			this.chatContainer.addClass('full-page');
+			this.chatContainer.addClass("full-page")
 		} else {
-			this.chatContainer.removeClass('full-page');
+			this.chatContainer.removeClass("full-page")
+		}
+	}
+
+	// Add method to create new chat session
+	private createNewSession(): ChatSession {
+		return {
+			id: Date.now().toString(),
+			title: "New chat",
+			timestamp: Date.now(),
+			messages: [],
+		}
+	}
+
+	// Add method to generate session title
+	private generateSessionTitle(firstMessage: string): string {
+		// Remove any markdown formatting
+		const cleanMessage = firstMessage.replace(/[#*`]/g, '').trim();
+		
+		// Check for specific patterns in the message
+		if (cleanMessage.toLowerCase().includes('summarize')) {
+			return "📝 Summary: " + this.extractDocumentName(cleanMessage);
+		}
+		
+		if (cleanMessage.toLowerCase().includes('translate')) {
+			return "🌐 Translation: " + this.extractDocumentName(cleanMessage);
+		}
+		
+		if (cleanMessage.toLowerCase().includes('action items') || 
+			cleanMessage.toLowerCase().includes('tasks')) {
+			return "✅ Tasks from: " + this.extractDocumentName(cleanMessage);
+		}
+		
+		// For questions
+		if (cleanMessage.endsWith('?')) {
+			return "❓ " + (cleanMessage.length > 40 
+				? cleanMessage.substring(0, 40) + "..."
+				: cleanMessage);
+		}
+		
+		// For general chat, try to extract key topic
+		const keywords = this.extractKeywords(cleanMessage);
+		if (keywords) {
+			return "💭 Chat about " + keywords;
+		}
+		
+		// Fallback to default with timestamp
+		return "💬 Chat from " + new Date().toLocaleTimeString([], { 
+			hour: '2-digit', 
+			minute: '2-digit' 
+		});
+	}
+
+	private extractDocumentName(message: string): string {
+		// Try to find the document name in the message
+		const lines = message.split('\n');
+		if (lines.length > 1) {
+			// Take the first non-empty line after the first line
+			for (let i = 1; i < lines.length; i++) {
+				const line = lines[i].trim();
+				if (line) {
+					return line.length > 30 ? line.substring(0, 30) + "..." : line;
+				}
+			}
+		}
+		return "Document";
+	}
+
+	private extractKeywords(message: string): string {
+		// Remove common words and get key topics
+		const commonWords = new Set([
+			'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i',
+			'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at',
+			'this', 'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her',
+			'she', 'or', 'an', 'will', 'my', 'one', 'all', 'would', 'there',
+			'their', 'what', 'so', 'up', 'out', 'if', 'about', 'who', 'get',
+			'which', 'go', 'me', 'please', 'could', 'can', 'just'
+		]);
+		
+		// Split message into words and filter
+		const words = message.toLowerCase()
+			.replace(/[^\w\s]/g, '')
+			.split(/\s+/)
+			.filter(word => !commonWords.has(word) && word.length > 2)
+			.slice(0, 3);
+		
+		if (words.length > 0) {
+			// Capitalize first letters
+			const formattedWords = words.map(word => 
+				word.charAt(0).toUpperCase() + word.slice(1)
+			);
+			return formattedWords.join(', ');
+		}
+		
+		return '';
+	}
+
+	// Update showChatHistoryView method
+	private showChatHistoryView() {
+		if (!this.chatContainer) return;
+
+		// Hide all other elements
+		const elementsToHide = [
+			'.bot-info',
+			'.suggested-actions',
+			'.chat-input-container',
+			'.gemini-chat-messages'
+			];
+		
+		elementsToHide.forEach(selector => {
+			const el = this.chatContainer.querySelector(selector);
+			if (el) (el as HTMLElement).style.display = 'none';
+		});
+
+		// Remove existing history view if any
+		const existingHistoryView = this.chatContainer.querySelector('.chat-history-view');
+		if (existingHistoryView) {
+			existingHistoryView.remove();
+		}
+
+		// Create and show history view
+		const historyView = document.createElement('div');
+		historyView.addClass('chat-history-view');
+		historyView.innerHTML = `
+			<div class="chat-history-header">
+				<div class="back-button">
+					<svg width="16" height="16" viewBox="0 0 24 24">
+						<path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+					</svg>
+				</div>
+				<h2>All chats</h2>
+				<div class="new-chat-button">New chat</div>
+			</div>
+			<div class="chat-history-search">
+				<input type="text" placeholder="Search or start new chat">
+			</div>
+			<div class="chat-history-sections">
+				${this.renderChatHistorySections()}
+			</div>
+		`;
+
+		this.chatContainer.appendChild(historyView);
+
+		// Add event listeners
+		const backBtn = historyView.querySelector('.back-button');
+		backBtn?.addEventListener('click', () => {
+			historyView.remove();
+			this.showMainChatView();
+		});
+
+		const newChatBtn = historyView.querySelector('.new-chat-button');
+		newChatBtn?.addEventListener('click', () => {
+			this.currentSession = this.createNewSession();
+			historyView.remove();
+			this.showMainChatView();
+		});
+
+		// Add click handlers for history items
+		this.attachHistoryItemListeners(historyView);
+
+		const searchInput = historyView.querySelector('input');
+		searchInput?.addEventListener('input', (e) => {
+			const query = (e.target as HTMLInputElement).value;
+			this.filterChatHistory(query);
+		});
+	}
+
+	// Update renderHistorySection to include delete button
+	private renderHistorySection(title: string, sessions: ChatSession[]): string {
+		if (sessions.length === 0) return '';
+
+		return `
+			<div class="history-section">
+				<h3>${title}</h3>
+				${sessions.map(session => `
+					<div class="history-item" data-session-id="${session.id}">
+						<div class="history-item-icon">💬</div>
+						<div class="history-item-content">
+							<div class="history-item-title">${session.title}</div>
+							<div class="history-item-time">${this.formatTime(session.timestamp)}</div>
+						</div>
+						<div class="delete-chat" data-session-id="${session.id}">
+							<svg width="14" height="14" viewBox="0 0 24 24">
+								<path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+							</svg>
+						</div>
+					</div>
+				`).join('')}
+			</div>
+		`;
+	}
+
+	// Add method to handle chat deletion
+	private deleteChat(sessionId: string) {
+		this.settings.chatSessions = this.settings.chatSessions.filter(s => s.id !== sessionId);
+		this.saveSettings();
+		
+		// Refresh the history view
+		const historyView = this.chatContainer.querySelector('.chat-history-view');
+		if (historyView) {
+			const sectionsContainer = historyView.querySelector('.chat-history-sections');
+			if (sectionsContainer) {
+				sectionsContainer.innerHTML = this.renderChatHistorySections();
+				// Reattach event listeners for new elements
+				this.attachHistoryItemListeners(historyView as HTMLElement);
+			}
+		}
+	}
+
+	// Add method to attach event listeners to history items
+	private attachHistoryItemListeners(historyView: HTMLElement) {
+		// Delete buttons
+		const deleteButtons = historyView.querySelectorAll('.delete-chat');
+		deleteButtons.forEach(btn => {
+			btn.addEventListener('click', (e) => {
+				e.stopPropagation(); // Prevent triggering the history item click
+				const sessionId = btn.getAttribute('data-session-id');
+				if (sessionId) {
+					this.deleteChat(sessionId);
+				}
+			});
+		});
+
+		// History items
+		const historyItems = historyView.querySelectorAll('.history-item');
+		historyItems.forEach(item => {
+			item.addEventListener('click', () => {
+				const sessionId = item.getAttribute('data-session-id');
+				const session = this.settings.chatSessions.find(s => s.id === sessionId);
+				if (session) {
+					this.currentSession = { ...session };
+					this.showMainChatView();
+					historyView.remove();
+				}
+			});
+		});
+	}
+
+	// Add method to render chat history sections
+	private renderChatHistorySections(): string {
+		const now = Date.now()
+		const dayInMs = 24 * 60 * 60 * 1000
+		const thirtyDaysAgo = now - 30 * dayInMs
+
+		const today: ChatSession[] = []
+		const past30Days: ChatSession[] = []
+		const older: ChatSession[] = []
+
+		this.settings.chatSessions.forEach((session) => {
+			if (session.timestamp > now - dayInMs) {
+				today.push(session)
+			} else if (session.timestamp > thirtyDaysAgo) {
+				past30Days.push(session)
+			} else {
+				older.push(session)
+			}
+		})
+
+		return `
+			${this.renderHistorySection("Today", today)}
+			${this.renderHistorySection("Past 30 days", past30Days)}
+			${this.renderHistorySection("Older", older)}
+		`
+	}
+
+	// Add method to format timestamp
+	private formatTime(timestamp: number): string {
+		const date = new Date(timestamp)
+		const now = new Date()
+
+		if (date.toDateString() === now.toDateString()) {
+			return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+		}
+		return date.toLocaleDateString()
+	}
+
+	// Update filterChatHistory method to fix search
+	private filterChatHistory(query: string) {
+		const historyView = this.chatContainer.querySelector('.chat-history-view');
+		if (!historyView) return;
+
+		const items = historyView.querySelectorAll('.history-item');
+		items.forEach(item => {
+			const title = item.querySelector('.history-item-title')?.textContent?.toLowerCase() || '';
+			if (title.includes(query.toLowerCase())) {
+				(item as HTMLElement).style.display = 'flex';
+			} else {
+				(item as HTMLElement).style.display = 'none';
+			}
+		});
+	}
+
+	// Update showMainChatView method
+	private showMainChatView() {
+		// Show all main chat elements
+		const elementsToShow = [
+			'.bot-info',
+			'.chat-input-container',
+			'.gemini-chat-messages'
+		];
+		
+		elementsToShow.forEach(selector => {
+			const el = this.chatContainer.querySelector(selector);
+			if (el) (el as HTMLElement).style.display = selector === '.gemini-chat-messages' ? 'flex' : 'block';
+		});
+
+		if (this.messagesContainer) {
+			this.messagesContainer.innerHTML = '';
+
+			// Only show messages if we have a current session
+			if (this.currentSession) {
+				this.currentSession.messages.forEach(message => 
+					this.addMessageToChat(message)
+				);
+				this.toggleSuggestedActions(false);
+			} else {
+				// Show suggested actions for new chat
+				this.toggleSuggestedActions(true);
+			}
 		}
 	}
 }
 
 class GeminiChatbotSettingTab extends PluginSettingTab {
-	plugin: GeminiChatbotPlugin;
-	
+	plugin: GeminiChatbotPlugin
+
 	constructor(app: App, plugin: GeminiChatbotPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
+		super(app, plugin)
+		this.plugin = plugin
 	}
-	
+
 	display(): void {
-		const {containerEl} = this;
-		containerEl.empty();
-		
+		const { containerEl } = this
+		containerEl.empty()
+
 		new Setting(containerEl)
-			.setName('Gemini API Key')
-			.setDesc('Enter your Gemini API key (stored securely)')
-			.addText(text => {
-				text.inputEl.type = 'password';
-				text.setPlaceholder('Enter your API key')
-					.setValue(this.plugin.settings.apiKey ? '••••••••' : '')
+			.setName("Gemini API Key")
+			.setDesc("Enter your Gemini API key (stored securely)")
+			.addText((text) => {
+				text.inputEl.type = "password"
+				text
+					.setPlaceholder("Enter your API key")
+					.setValue(this.plugin.settings.apiKey ? "••••••••" : "")
 					.onChange(async (value) => {
-						// Only update if the value is different from placeholder
-						if (value !== '••••••••') {
-							this.plugin.settings.apiKey = this.plugin.encryptApiKey(value);
-							await this.plugin.saveSettings();
-							// Reinitialize the service with new key
-							this.plugin.initializeGeminiService();
+						if (value !== "••••••••") {
+							this.plugin.settings.apiKey = this.plugin.encryptApiKey(value)
+							await this.plugin.saveSettings()
+							this.plugin.initializeGeminiService()
 						}
-					});
-				
+					})
+
 				// Add show/hide password toggle
-				const toggleButton = text.inputEl.createEl('button', {
-					text: '👁️',
-					cls: 'password-toggle',
-				});
-				toggleButton.style.position = 'absolute';
-				toggleButton.style.right = '5px';
-				toggleButton.style.top = '50%';
-				toggleButton.style.transform = 'translateY(-50%)';
-				toggleButton.style.background = 'transparent';
-				toggleButton.style.border = 'none';
-				toggleButton.style.cursor = 'pointer';
-				
-				toggleButton.addEventListener('click', (e) => {
-					e.preventDefault();
-					text.inputEl.type = text.inputEl.type === 'password' ? 'text' : 'password';
-				});
-			});
+				const toggleButton = text.inputEl.createEl("button", {
+					text: "👁️",
+					cls: "password-toggle",
+				})
+				toggleButton.style.position = "absolute"
+				toggleButton.style.right = "5px"
+				toggleButton.style.top = "50%"
+				toggleButton.style.transform = "translateY(-50%)"
+				toggleButton.style.background = "transparent"
+				toggleButton.style.border = "none"
+				toggleButton.style.cursor = "pointer"
+
+				toggleButton.addEventListener("click", (e) => {
+					e.preventDefault()
+					text.inputEl.type = text.inputEl.type === "password" ? "text" : "password"
+				})
+			})
 	}
 }

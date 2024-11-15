@@ -384,3 +384,144 @@ If your plugin does not need CSS, delete this file.
 .history-button.active {
     color: var(--interactive-accent);
 }
+
+/* Chat History View */
+.chat-history-view {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--background-primary);
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-history-header {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.chat-history-header h2 {
+    margin: 0;
+    flex-grow: 1;
+    font-size: 1.2em;
+}
+
+.back-button,
+.new-chat-button {
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.back-button:hover,
+.new-chat-button:hover {
+    background: var(--background-modifier-hover);
+}
+
+.new-chat-button {
+    color: var(--text-accent);
+}
+
+.chat-history-search {
+    padding: 16px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.chat-history-search input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    background: var(--background-modifier-form-field);
+}
+
+.chat-history-sections {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+.history-section {
+    margin-bottom: 24px;
+}
+
+.history-section h3 {
+    font-size: 0.9em;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+
+.history-item {
+    position: relative;
+    padding-right: 40px; /* Space for delete button */
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.history-item:hover {
+    background: var(--background-modifier-hover);
+}
+
+.history-item-icon {
+    font-size: 1.2em;
+}
+
+.history-item-content {
+    flex-grow: 1;
+}
+
+.history-item-title {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.history-item-time {
+    font-size: 0.8em;
+    color: var(--text-muted);
+}
+
+.delete-chat {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: opacity 0.2s;
+    padding: 4px;
+    border-radius: 4px;
+    color: var(--text-error);
+}
+
+.history-item:hover .delete-chat {
+    opacity: 0.7;
+}
+
+.delete-chat:hover {
+    opacity: 1 !important;
+    background: var(--background-modifier-error);
+    color: var(--text-on-accent);
+}
+
+/* Back button improvements */
+.back-button {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.back-button:hover {
+    background-color: var(--background-modifier-hover);
+}
