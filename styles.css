@@ -92,15 +92,24 @@ If your plugin does not need CSS, delete this file.
 	width: 40px;
 	height: 40px;
 	border-radius: 50%;
-	background-color: var(--background-modifier-border);
+	background-color: rgba(255, 255, 255, 0.1);
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	padding: 8px;
+}
+
+.bot-avatar svg {
+	width: 24px;
+	height: 24px;
+	color: var(--text-normal);
+	opacity: 0.8;
 }
 
 .bot-greeting {
 	font-size: 1.25em;
-	font-weight: 600;
+	font-weight: 500;
+	color: var(--text-normal);
 	margin-bottom: 24px;
 }
 
