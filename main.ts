@@ -194,9 +194,6 @@ export default class GeminiChatbotPlugin extends Plugin {
 		messageEl.addClass(`gemini-message-${message.role}`);
 
 		if (message.role === 'bot') {
-			// Create content container
-			const contentDiv = messageEl.createDiv('response-content');
-			
 			// Add copy button
 			const copyButton = messageEl.createEl('button', {
 				text: 'Copy to new note',
@@ -214,10 +211,10 @@ export default class GeminiChatbotPlugin extends Plugin {
 				new Notice('Response copied to new note!');
 			});
 
-			// Render markdown content
+			// Directly render markdown
 			await MarkdownRenderer.renderMarkdown(
 				message.content,
-				contentDiv,
+				messageEl,
 				'',
 				this
 			);

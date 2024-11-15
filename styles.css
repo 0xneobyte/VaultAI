@@ -37,17 +37,15 @@ If your plugin does not need CSS, delete this file.
     bottom: 100px !important;
     right: 20px !important;
     width: 380px;
-    min-height: 480px;
-    max-height: 80vh;
+    height: 600px;
+    display: flex;
+    flex-direction: column;
     background-color: var(--background-primary);
     border-radius: 12px;
     border: 1px solid var(--background-modifier-border);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
     z-index: 1000;
     overflow: hidden;
-    animation: slideIn 0.3s ease-out;
 }
 
 @keyframes slideIn {
@@ -198,7 +196,8 @@ If your plugin does not need CSS, delete this file.
     display: flex;
     flex-direction: column;
     gap: 12px;
-    max-height: calc(100% - 200px);
+    min-height: 0;
+    height: calc(100% - 140px);
 }
 
 .gemini-message-user,
@@ -207,7 +206,8 @@ If your plugin does not need CSS, delete this file.
     max-width: 85%;
     padding: 12px;
     border-radius: 12px;
-    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    flex-shrink: 0;
 }
 
 .gemini-message-user {
@@ -221,12 +221,10 @@ If your plugin does not need CSS, delete this file.
     width: 100%;
     background: var(--background-primary);
     border: 1px solid var(--background-modifier-border);
-    border-radius: 8px;
-    margin: 8px 0;
+    padding: 16px;
     position: relative;
-    max-height: 60vh;
-    display: flex;
-    flex-direction: column;
+    flex-shrink: 0;
+    min-height: min-content;
 }
 
 .gemini-message-error {
@@ -690,16 +688,7 @@ If your plugin does not need CSS, delete this file.
     color: var(--text-muted);
 }
 
-/* Bot message styling */
-.gemini-message-bot {
-    width: 100%;
-    background: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 8px;
-    margin: 8px 0;
-    position: relative;
-}
-
+/* Copy button styling */
 .copy-response-button {
     position: absolute;
     top: 8px;
@@ -719,43 +708,223 @@ If your plugin does not need CSS, delete this file.
     opacity: 1;
 }
 
-.response-content {
-    padding: 16px;
-    overflow-x: auto;
-}
-
-/* Markdown content styling */
-.response-content p {
-    margin: 0.5em 0;
-}
-
-.response-content h1,
-.response-content h2,
-.response-content h3,
-.response-content h4,
-.response-content h5,
-.response-content h6 {
+/* Direct markdown content styling */
+.gemini-message-bot h1,
+.gemini-message-bot h2,
+.gemini-message-bot h3,
+.gemini-message-bot h4,
+.gemini-message-bot h5,
+.gemini-message-bot h6 {
     margin: 1em 0 0.5em 0;
+    line-height: 1.3;
 }
 
-.response-content ul,
-.response-content ol {
-    margin: 0.5em 0;
+.gemini-message-bot p {
+    margin: 0.8em 0;
+    line-height: 1.6;
+}
+
+.gemini-message-bot ul,
+.gemini-message-bot ol {
+    margin: 0.8em 0;
     padding-left: 1.5em;
 }
 
-.response-content pre {
-    background: var(--background-secondary);
-    padding: 1em;
-    border-radius: 4px;
-    overflow-x: auto;
-    margin: 0.5em 0;
+.gemini-message-bot li {
+    margin: 0.3em 0;
 }
 
-.response-content code {
+.gemini-message-bot pre {
+    background: var(--background-secondary);
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin: 1em 0;
+    overflow-x: auto;
+}
+
+.gemini-message-bot code {
+    background: var(--background-secondary);
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    font-family: var(--font-monospace);
+    font-size: 0.9em;
+}
+
+.gemini-message-bot blockquote {
+    margin: 1em 0;
+    padding: 0.5em 1em;
+    border-left: 3px solid var(--interactive-accent);
+    background: var(--background-secondary);
+    border-radius: 0 4px 4px 0;
+}
+
+.gemini-message-bot table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+
+.gemini-message-bot th,
+.gemini-message-bot td {
+    border: 1px solid var(--background-modifier-border);
+    padding: 8px 12px;
+}
+
+.gemini-message-bot th {
+    background: var(--background-secondary);
+}
+
+/* Typewriter animation */
+@keyframes typewriter {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.response-content > * {
+    animation: typewriter 0.2s ease-out forwards;
+    opacity: 0;
+}
+
+.response-content > *:nth-child(1) { animation-delay: 0.1s; }
+.response-content > *:nth-child(2) { animation-delay: 0.2s; }
+.response-content > *:nth-child(3) { animation-delay: 0.3s; }
+.response-content > *:nth-child(4) { animation-delay: 0.4s; }
+.response-content > *:nth-child(5) { animation-delay: 0.5s; }
+/* Add more if needed */
+
+/* Better blockquote styling */
+.response-content blockquote {
+    margin: 1em 0;
+    padding: 0.5em 1em;
+    border-left: 3px solid var(--interactive-accent);
+    background: var(--background-secondary);
+    border-radius: 0 4px 4px 0;
+}
+
+/* Table styling */
+.response-content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+
+.response-content th,
+.response-content td {
+    border: 1px solid var(--background-modifier-border);
+    padding: 8px 12px;
+}
+
+.response-content th {
+    background: var(--background-secondary);
+}
+
+/* Bot message styling */
+.gemini-message-bot {
+    width: 100%;
+    max-height: 400px;
+    overflow-y: auto;
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 12px;
+    margin: 8px 0;
+    padding: 16px;
+    position: relative;
+}
+
+/* Scrollbar styling for the bot message */
+.gemini-message-bot::-webkit-scrollbar {
+    width: 8px;
+}
+
+.gemini-message-bot::-webkit-scrollbar-track {
+    background: var(--background-primary);
+    border-radius: 0 12px 12px 0;
+}
+
+.gemini-message-bot::-webkit-scrollbar-thumb {
+    background: var(--background-modifier-border);
+    border-radius: 4px;
+}
+
+.gemini-message-bot::-webkit-scrollbar-thumb:hover {
+    background: var(--interactive-accent);
+}
+
+/* Copy button */
+.copy-response-button {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.gemini-message-bot:hover .copy-response-button {
+    opacity: 1;
+}
+
+/* Direct markdown styling */
+.gemini-message-bot h1,
+.gemini-message-bot h2,
+.gemini-message-bot h3,
+.gemini-message-bot h4,
+.gemini-message-bot h5,
+.gemini-message-bot h6 {
+    margin: 1em 0 0.5em 0;
+}
+
+.gemini-message-bot p {
+    margin: 0.8em 0;
+}
+
+.gemini-message-bot ul,
+.gemini-message-bot ol {
+    margin: 0.8em 0;
+    padding-left: 1.5em;
+}
+
+.gemini-message-bot pre {
+    background: var(--background-secondary);
+    padding: 12px 16px;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 0.8em 0;
+}
+
+.gemini-message-bot code {
     background: var(--background-secondary);
     padding: 0.2em 0.4em;
     border-radius: 3px;
-    font-family: var(--font-monospace);
     font-size: 0.9em;
+}
+
+/* Scrollbar styling for messages container */
+.gemini-chat-messages::-webkit-scrollbar {
+    width: 8px;
+}
+
+.gemini-chat-messages::-webkit-scrollbar-track {
+    background: var(--background-primary);
+}
+
+.gemini-chat-messages::-webkit-scrollbar-thumb {
+    background: var(--background-modifier-border);
+    border-radius: 4px;
+}
+
+.gemini-chat-messages::-webkit-scrollbar-thumb:hover {
+    background: var(--interactive-accent);
 }
