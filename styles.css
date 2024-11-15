@@ -197,6 +197,7 @@ If your plugin does not need CSS, delete this file.
     display: flex;
     flex-direction: column;
     gap: 12px;
+    height: calc(100% - 180px);
 }
 
 .gemini-message-user,
@@ -302,28 +303,83 @@ If your plugin does not need CSS, delete this file.
 
 /* Improve markdown rendering in messages */
 .gemini-message-bot {
-    background: var(--background-modifier-form-field);
-    padding: 16px;
-    border-radius: 12px 12px 12px 4px;
-}
-
-.gemini-message-bot pre {
+    max-width: 100%;
     background: var(--background-primary);
     border: 1px solid var(--background-modifier-border);
-    border-radius: 6px;
+    border-radius: 8px;
+    margin: 8px 0;
 }
 
-.gemini-message-bot code {
+.response-content {
+    padding: 16px;
+    color: var(--text-normal);
+    overflow-x: hidden;
+    word-wrap: break-word;
+}
+
+.response-content pre {
+    background: var(--background-secondary);
+    padding: 12px;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 8px 0;
+    white-space: pre-wrap;
+}
+
+.response-content code {
     font-family: var(--font-monospace);
     font-size: 0.9em;
+    padding: 2px 4px;
+    background: var(--background-secondary);
+    border-radius: 3px;
 }
 
-.gemini-message-bot p:first-child {
-    margin-top: 0;
+.response-content ul,
+.response-content ol {
+    padding-left: 1.5em;
+    margin: 8px 0;
 }
 
-.gemini-message-bot p:last-child {
-    margin-bottom: 0;
+.response-content h1,
+.response-content h2,
+.response-content h3,
+.response-content h4,
+.response-content h5,
+.response-content h6 {
+    margin: 16px 0 8px 0;
+    line-height: 1.4;
+}
+
+.response-content p {
+    margin: 8px 0;
+    line-height: 1.6;
+}
+
+.response-content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 8px 0;
+}
+
+.response-content th,
+.response-content td {
+    border: 1px solid var(--background-modifier-border);
+    padding: 6px 8px;
+}
+
+.response-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin: 8px 0;
+}
+
+.response-content blockquote {
+    margin: 8px 0;
+    padding: 8px 16px;
+    border-left: 3px solid var(--interactive-accent);
+    background: var(--background-secondary);
+    border-radius: 0 4px 4px 0;
 }
 
 /* More Options Menu */
@@ -557,4 +613,84 @@ If your plugin does not need CSS, delete this file.
     margin: 0 2px;
     font-size: 0.9em;
     color: var(--text-accent);
+}
+
+/* Response Formatting */
+.gemini-message-bot {
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.response-header {
+    padding: 8px 12px;
+    background: var(--background-secondary);
+    border-bottom: 1px solid var(--background-modifier-border);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.copy-response-button {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    transition: opacity 0.2s;
+}
+
+.copy-response-button:hover {
+    opacity: 0.9;
+}
+
+.response-content {
+    padding: 16px;
+    color: var(--text-normal);
+}
+
+/* Markdown Content Styling */
+.response-content h1,
+.response-content h2,
+.response-content h3,
+.response-content h4,
+.response-content h5,
+.response-content h6 {
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+}
+
+.response-content p {
+    margin: 0.5em 0;
+}
+
+.response-content ul,
+.response-content ol {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+}
+
+.response-content code {
+    background: var(--background-secondary);
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: var(--font-monospace);
+    font-size: 0.9em;
+}
+
+.response-content pre {
+    background: var(--background-secondary);
+    padding: 1em;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 0.5em 0;
+}
+
+.response-content blockquote {
+    border-left: 3px solid var(--interactive-accent);
+    margin: 0.5em 0;
+    padding-left: 1em;
+    color: var(--text-muted);
 }

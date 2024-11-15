@@ -1,4 +1,4 @@
-import { App, Plugin, PluginSettingTab, Setting } from "obsidian"
+import { App, Notice, Plugin, PluginSettingTab, Setting } from "obsidian"
 import { GeminiService } from "./src/services/GeminiService"
 import { LanguageSelectionModal } from "./src/modals/LanguageSelectionModal"
 import { MarkdownRenderer } from "obsidian"
@@ -188,32 +188,25 @@ export default class GeminiChatbotPlugin extends Plugin {
 	}
 
 	private async addMessageToChat(message: ChatMessage) {
-		if (!this.messagesContainer) return
+		if (!this.messagesContainer) return;
 
-		const messageEl = document.createElement('div')
-		messageEl.addClass(`gemini-message-${message.role}`)
+		const messageEl = document.createElement('div');
+		messageEl.addClass(`gemini-message-${message.role}`);
 
 		if (message.role === 'bot') {
-			// Create a container for markdown content
-			const markdownContainer = messageEl.createDiv()
-			
-			if (message.content) {
-				// Add typing animation for bot messages
-				await this.typeMessage(message.content, markdownContainer)
-			}
+			// Use the new formatting for bot messages
+			await this.formatBotResponse(messageEl, message.content);
 		} else {
-			// For user messages, just show the visible part (not the context)
-			const visibleContent = this.stripContextFromMessage(message.content)
-			messageEl.textContent = visibleContent
+			// For user messages, just show the visible part
+			const visibleContent = this.stripContextFromMessage(message.content);
+			messageEl.textContent = visibleContent;
 		}
 
-		this.messagesContainer.appendChild(messageEl)
-		this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight
-
-		this.chatHistory.push(message)
+		this.messagesContainer.appendChild(messageEl);
+		this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
 
 		if (this.currentSession) {
-			this.currentSession.messages.push(message)
+			this.currentSession.messages.push(message);
 		}
 	}
 
@@ -384,62 +377,29 @@ export default class GeminiChatbotPlugin extends Plugin {
 			}
 		})
 
-		// Update action buttons handlers
+		// Simplify action buttons handlers
 		const actionButtons = this.chatContainer.querySelectorAll(".action-button");
 		actionButtons.forEach((button) => {
 			button.addEventListener("click", () => {
-				console.log("Action button clicked:", button.textContent?.trim());
-				
-				const action = button.textContent?.trim();
-				if (!action || !this.inputField) {
-					console.log("No action or input field not found");
-					return;
+				if (!this.inputField) return;
+
+				// Simply set the input value based on the action
+				if (button.textContent?.includes("Summarize")) {
+					this.inputField.value = "Can you summarize this note for me?";
+				} else if (button.textContent?.includes("Ask about")) {
+					this.inputField.value = "What is this note about?";
+				} else if (button.textContent?.includes("Make a quiz")) {
+					this.inputField.value = "Can you create a quiz using this note?";
+				} else if (button.textContent?.includes("Translate")) {
+					new LanguageSelectionModal(this.app, (language: string) => {
+						if (this.inputField) {
+							this.inputField.value = `Can you translate this note to ${language}?`;
+						}
+					}).open();
 				}
 
-				// Hide suggested actions
-				console.log("Hiding suggested actions");
-				const suggestedActions = this.chatContainer.querySelector(".suggested-actions") as HTMLElement;
-				if (suggestedActions) {
-					suggestedActions.style.display = "none";
-				}
-
-				// Show messages container
-				console.log("Showing messages container");
-				if (this.messagesContainer) {
-					this.messagesContainer.style.display = "flex";
-				}
-
-				// Set input value based on action
-				console.log("Setting input value for action:", action);
-				switch (action) {
-					case "Summarize this page":
-						this.inputField.value = "Can you summarize this note for me?";
-						break;
-					case "Ask about this page":
-						this.inputField.value = "What is this note about?";
-						break;
-					case "Make a quiz":
-						this.inputField.value = "Can you create a quiz using this note?";
-						break;
-					case "Translate to":
-						new LanguageSelectionModal(this.app, (language: string) => {
-							console.log("Language selected:", language);
-							if (this.inputField) {
-								this.inputField.value = `Can you translate this note to ${language}?`;
-								this.inputField.focus();
-							}
-						}).open();
-						return;
-				}
-
-				// Trigger input event to update UI
-				console.log("Triggering input event");
-				this.inputField.dispatchEvent(new Event('input'));
-
-				// Send the message
-				console.log("Sending message:", this.inputField.value);
-				this.handleMessage(this.inputField.value);
-				this.inputField.value = "";
+				// Focus the input
+				this.inputField.focus();
 			});
 		});
 
@@ -962,6 +922,36 @@ export default class GeminiChatbotPlugin extends Plugin {
 		}
 
 		return relevantPart + '[Content truncated for length...]';
+	}
+
+	// Add this method to format the bot's response
+	private async formatBotResponse(container: HTMLElement, content: string) {
+		// Create header with copy button
+		const headerDiv = container.createDiv('response-header');
+		const copyButton = headerDiv.createEl('button', {
+			text: 'Copy to new note',
+			cls: 'copy-response-button',
+		});
+		
+		copyButton.addEventListener('click', async () => {
+			// Create new note with response content
+			const fileName = `AI Response ${new Date().toLocaleString().replace(/[/:\\]/g, '-')}`;
+			const file = await this.app.vault.create(
+				`${fileName}.md`,
+				content
+			);
+			
+			// Open the new file
+			const leaf = this.app.workspace.getLeaf(false);
+			await leaf.openFile(file);
+			
+			// Show notification
+			new Notice('Response copied to new note!');
+		});
+
+		// Create content container with proper formatting
+		const contentDiv = container.createDiv('response-content');
+		await MarkdownRenderer.renderMarkdown(content, contentDiv, '', this);
 	}
 }
 
