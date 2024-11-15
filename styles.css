@@ -33,6 +33,10 @@ If your plugin does not need CSS, delete this file.
 	z-index: 1000;
 	overflow: hidden;
 	animation: slideIn 0.3s ease-out;
+	resize: horizontal;
+	min-width: 380px;
+	max-width: 800px;
+	transform-origin: bottom right;
 }
 
 @keyframes slideIn {
@@ -1113,4 +1117,27 @@ If your plugin does not need CSS, delete this file.
 
 .chat-history-view.closing {
     animation: slideOutHistory 0.3s ease-out;
+}
+
+/* Add resize handle to top-left corner */
+.resize-handle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    cursor: nw-resize;
+    z-index: 1002;
+}
+
+.resize-handle::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-left: 2px solid rgba(255, 255, 255, 0.4);
+    border-top: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 2px 0 0 0;
 }

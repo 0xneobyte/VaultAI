@@ -420,6 +420,14 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 		// Add event listeners for the buttons
 		this.addChatEventListeners()
+
+		// Add resize handle
+		const resizeHandle = document.createElement('div');
+		resizeHandle.addClass('resize-handle');
+		this.chatContainer.appendChild(resizeHandle);
+
+		// Add resize functionality
+		this.addResizeFunctionality(resizeHandle);
 	}
 
 	private addChatEventListeners() {
@@ -1151,6 +1159,45 @@ export default class GeminiChatbotPlugin extends Plugin {
 			hour: "numeric",
 			minute: "2-digit",
 		})}`
+	}
+
+	private addResizeFunctionality(handle: HTMLElement) {
+		let isResizing = false;
+		let startWidth: number;
+		let startX: number;
+
+		handle.addEventListener('mousedown', (e: MouseEvent) => {
+			isResizing = true;
+			startWidth = this.chatContainer.offsetWidth;
+			startX = e.clientX;
+
+			// Add event listeners
+			document.addEventListener('mousemove', handleMouseMove);
+			document.addEventListener('mouseup', stopResize);
+
+			// Prevent text selection while resizing
+			e.preventDefault();
+		});
+
+		const handleMouseMove = (e: MouseEvent) => {
+			if (!isResizing) return;
+
+			// Calculate new width (expanding leftward)
+			const deltaX = startX - e.clientX;
+			const newWidth = Math.min(
+				Math.max(startWidth + deltaX, 380), // Minimum width: 380px
+				800 // Maximum width: 800px
+			);
+
+			// Update container width
+			this.chatContainer.style.width = `${newWidth}px`;
+		};
+
+		const stopResize = () => {
+			isResizing = false;
+			document.removeEventListener('mousemove', handleMouseMove);
+			document.removeEventListener('mouseup', stopResize);
+		};
 	}
 }
 
