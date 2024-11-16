@@ -167,7 +167,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 		this.messagesContainer?.appendChild(typingIndicator)
 
 		try {
-			this.lastApiCall = Date.now() // Update last API call time
+			this.lastApiCall = Date.now()
 			const response = await this.geminiService.sendMessage(finalMessage)
 			typingIndicator.remove()
 
@@ -179,30 +179,51 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 			await this.addMessageToChat(botMessage)
 
+			// Update chat session
 			if (this.currentSession) {
 				if (this.currentSession.messages.length === 2) {
 					this.currentSession.title = this.generateSessionTitle(userMessage.content)
 				}
-
 				this.settings.chatSessions = [
 					this.currentSession,
 					...this.settings.chatSessions.filter((s) => s.id !== this.currentSession?.id),
 				]
-
 				await this.saveSettings()
 			}
 		} catch (error) {
 			typingIndicator.remove()
 
-			// Better error handling
 			let errorMessage = "Failed to get response from Gemini"
+			
 			if (error instanceof Error) {
-				if (error.message.includes("429")) {
-					errorMessage = "Rate limit reached. Please wait a moment before trying again."
-				} else if (error.message.includes("quota")) {
-					errorMessage = "API quota exceeded. Please try again later."
+				// Handle safety-related errors
+				if (error.message.includes("SAFETY")) {
+					errorMessage = "I cannot provide a response to that as it may violate content safety guidelines."
 				}
+				// Handle blocked content
+				else if (error.message.includes("blocked") || error.message.includes("OTHER")) {
+					errorMessage = "I cannot process that request as it was blocked by content filters."
+				}
+				// Handle rate limits
+				else if (error.message.includes("429") || error.message.includes("quota")) {
+					errorMessage = "API rate limit reached. Please wait a moment before trying again."
+				}
+				// Handle invalid requests
+				else if (error.message.includes("400")) {
+					errorMessage = "Invalid request. Please try rephrasing your message."
+				}
+				// Handle authentication errors
+				else if (error.message.includes("401") || error.message.includes("403")) {
+					errorMessage = "API authentication failed. Please check your API key in settings."
+				}
+				// Handle server errors
+				else if (error.message.includes("500")) {
+					errorMessage = "Gemini service is currently experiencing issues. Please try again later."
+				}
+				// Log the actual error for debugging
+				console.error("Gemini API Error:", error)
 			}
+
 			this.addErrorMessage(errorMessage)
 		}
 	}
@@ -299,12 +320,16 @@ export default class GeminiChatbotPlugin extends Plugin {
 	}
 
 	private addErrorMessage(message: string) {
-		if (!this.messagesContainer) return
-
-		const errorEl = document.createElement("div")
-		errorEl.addClass("gemini-message-error")
-		errorEl.textContent = message
-		this.messagesContainer.appendChild(errorEl)
+		const errorDiv = document.createElement("div")
+		errorDiv.addClass("gemini-message-error")
+		errorDiv.innerHTML = `
+			<div class="error-icon">⚠️</div>
+			<div class="error-content">${message}</div>
+		`
+		this.messagesContainer?.appendChild(errorDiv)
+		if (this.messagesContainer) {
+			this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight
+		}
 	}
 
 	private addFloatingIcon() {
