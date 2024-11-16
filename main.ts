@@ -167,7 +167,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 		this.messagesContainer?.appendChild(typingIndicator)
 
 		try {
-			this.lastApiCall = Date.now() // Update last API call time
+			this.lastApiCall = Date.now()
 			const response = await this.geminiService.sendMessage(finalMessage)
 			typingIndicator.remove()
 
@@ -179,30 +179,51 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 			await this.addMessageToChat(botMessage)
 
+			// Update chat session
 			if (this.currentSession) {
 				if (this.currentSession.messages.length === 2) {
 					this.currentSession.title = this.generateSessionTitle(userMessage.content)
 				}
-
 				this.settings.chatSessions = [
 					this.currentSession,
 					...this.settings.chatSessions.filter((s) => s.id !== this.currentSession?.id),
 				]
-
 				await this.saveSettings()
 			}
 		} catch (error) {
 			typingIndicator.remove()
 
-			// Better error handling
 			let errorMessage = "Failed to get response from Gemini"
+			
 			if (error instanceof Error) {
-				if (error.message.includes("429")) {
-					errorMessage = "Rate limit reached. Please wait a moment before trying again."
-				} else if (error.message.includes("quota")) {
-					errorMessage = "API quota exceeded. Please try again later."
+				// Handle safety-related errors
+				if (error.message.includes("SAFETY")) {
+					errorMessage = "I cannot provide a response to that as it may violate content safety guidelines."
 				}
+				// Handle blocked content
+				else if (error.message.includes("blocked") || error.message.includes("OTHER")) {
+					errorMessage = "I cannot process that request as it was blocked by content filters."
+				}
+				// Handle rate limits
+				else if (error.message.includes("429") || error.message.includes("quota")) {
+					errorMessage = "API rate limit reached. Please wait a moment before trying again."
+				}
+				// Handle invalid requests
+				else if (error.message.includes("400")) {
+					errorMessage = "Invalid request. Please try rephrasing your message."
+				}
+				// Handle authentication errors
+				else if (error.message.includes("401") || error.message.includes("403")) {
+					errorMessage = "API authentication failed. Please check your API key in settings."
+				}
+				// Handle server errors
+				else if (error.message.includes("500")) {
+					errorMessage = "Gemini service is currently experiencing issues. Please try again later."
+				}
+				// Log the actual error for debugging
+				console.error("Gemini API Error:", error)
 			}
+
 			this.addErrorMessage(errorMessage)
 		}
 	}
@@ -299,12 +320,16 @@ export default class GeminiChatbotPlugin extends Plugin {
 	}
 
 	private addErrorMessage(message: string) {
-		if (!this.messagesContainer) return
-
-		const errorEl = document.createElement("div")
-		errorEl.addClass("gemini-message-error")
-		errorEl.textContent = message
-		this.messagesContainer.appendChild(errorEl)
+		const errorDiv = document.createElement("div")
+		errorDiv.addClass("gemini-message-error")
+		errorDiv.innerHTML = `
+			<div class="error-icon">⚠️</div>
+			<div class="error-content">${message}</div>
+		`
+		this.messagesContainer?.appendChild(errorDiv)
+		if (this.messagesContainer) {
+			this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight
+		}
 	}
 
 	private addFloatingIcon() {
@@ -1159,7 +1184,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 	}
 
 	// Update showMainChatView method
-	private showMainChatView() {
+	private async showMainChatView() {
 		// Show all main chat elements
 		const elementsToShow = [".bot-info", ".chat-input-container", ".gemini-chat-messages"]
 
@@ -1170,11 +1195,64 @@ export default class GeminiChatbotPlugin extends Plugin {
 		})
 
 		if (this.messagesContainer) {
+			// Clear existing messages before adding new ones
 			this.messagesContainer.innerHTML = ""
 
 			// Only show messages if we have a current session
 			if (this.currentSession) {
-				this.currentSession.messages.forEach((message) => this.addMessageToChat(message))
+				// Hide bot info and suggested actions if there are messages
+				if (this.currentSession.messages.length > 0) {
+					const botInfo = this.chatContainer.querySelector('.bot-info')
+					const suggestedActions = this.chatContainer.querySelector('.suggested-actions')
+					
+					if (botInfo) {
+						botInfo.addClass('hidden')
+						setTimeout(() => botInfo.remove(), 300)
+					}
+					
+					if (suggestedActions) {
+						suggestedActions.addClass('hidden')
+						setTimeout(() => suggestedActions.remove(), 300)
+					}
+				}
+
+				// Create a new array with sorted messages
+				const sortedMessages = [...this.currentSession.messages].sort(
+					(a, b) => a.timestamp - b.timestamp
+				)
+				
+				// Display messages in chronological order
+				for (const message of sortedMessages) {
+					const messageEl = document.createElement("div")
+					messageEl.addClass(`gemini-message-${message.role}`)
+
+					if (message.role === "bot") {
+						// Add copy button for bot messages
+						const copyButton = messageEl.createEl("button", {
+							text: "Copy to new note",
+							cls: "copy-response-button",
+						})
+
+						copyButton.addEventListener("click", async () => {
+							const title = this.generateNoteTitle(message.content)
+							const file = await this.app.vault.create(`${title}.md`, message.content)
+							const leaf = this.app.workspace.getLeaf(false)
+							await leaf.openFile(file)
+							new Notice("Response copied to new note!")
+						})
+
+						// Render markdown for bot messages
+						await MarkdownRenderer.renderMarkdown(message.content, messageEl, "", this)
+					} else {
+						// For user messages, show the visible content
+						const visibleContent = this.stripContextFromMessage(message.content)
+						messageEl.textContent = visibleContent
+					}
+
+					this.messagesContainer.appendChild(messageEl)
+				}
+				
+				this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight
 				this.toggleSuggestedActions(false)
 			} else {
 				// Show suggested actions for new chat
