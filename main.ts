@@ -194,6 +194,21 @@ export default class GeminiChatbotPlugin extends Plugin {
 	private async addMessageToChat(message: ChatMessage) {
 		if (!this.messagesContainer) return
 
+		// Hide bot info and suggested actions after first message
+		if (this.currentSession?.messages.length === 0) {
+			const botInfo = this.chatContainer?.querySelector('.bot-info');
+			const suggestedActions = this.chatContainer?.querySelector('.suggested-actions');
+			
+			botInfo?.addClass('hidden');
+			suggestedActions?.addClass('hidden');
+			
+			// Remove elements after animation
+			setTimeout(() => {
+				botInfo?.remove();
+				suggestedActions?.remove();
+			}, 300);
+		}
+
 		const messageEl = document.createElement("div")
 		messageEl.addClass(`gemini-message-${message.role}`)
 

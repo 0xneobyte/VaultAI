@@ -132,6 +132,14 @@
 	display: flex;
 	align-items: flex-start;
 	gap: 16px;
+	transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+.bot-info.hidden {
+	opacity: 0;
+	transform: translateY(-20px);
+	pointer-events: none;
+	position: absolute;
 }
 
 .bot-avatar {
@@ -166,6 +174,14 @@
 .suggested-actions {
 	padding: 0 24px;
 	background: var(--chat-background);
+	transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+.suggested-actions.hidden {
+	opacity: 0;
+	transform: translateY(-20px);
+	pointer-events: none;
+	position: absolute;
 }
 
 .suggested-actions h3 {
