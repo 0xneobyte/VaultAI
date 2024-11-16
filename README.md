@@ -2,9 +2,9 @@
 
 <div align="center">
 
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/tharushkadinujaya05/obsidian-gemini-chatbot)
-![GitHub all releases](https://img.shields.io/github/downloads/tharushkadinujaya05/obsidian-gemini-chatbot/total)
-![GitHub](https://img.shields.io/github/license/tharushkadinujaya05/obsidian-gemini-chatbot)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/tharushkadinujaya05/obsiai)
+![GitHub all releases](https://img.shields.io/github/downloads/tharushkadinujaya05/obsiai/total)
+![GitHub](https://img.shields.io/github/license/tharushkadinujaya05/obsiai)
 
 A powerful AI assistant for [Obsidian](https://obsidian.md), featuring a modern floating chat interface powered by Google's Gemini AI.
 
