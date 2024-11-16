@@ -1159,7 +1159,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 	}
 
 	// Update showMainChatView method
-	private showMainChatView() {
+	private async showMainChatView() {
 		// Show all main chat elements
 		const elementsToShow = [".bot-info", ".chat-input-container", ".gemini-chat-messages"]
 
@@ -1170,11 +1170,64 @@ export default class GeminiChatbotPlugin extends Plugin {
 		})
 
 		if (this.messagesContainer) {
+			// Clear existing messages before adding new ones
 			this.messagesContainer.innerHTML = ""
 
 			// Only show messages if we have a current session
 			if (this.currentSession) {
-				this.currentSession.messages.forEach((message) => this.addMessageToChat(message))
+				// Hide bot info and suggested actions if there are messages
+				if (this.currentSession.messages.length > 0) {
+					const botInfo = this.chatContainer.querySelector('.bot-info')
+					const suggestedActions = this.chatContainer.querySelector('.suggested-actions')
+					
+					if (botInfo) {
+						botInfo.addClass('hidden')
+						setTimeout(() => botInfo.remove(), 300)
+					}
+					
+					if (suggestedActions) {
+						suggestedActions.addClass('hidden')
+						setTimeout(() => suggestedActions.remove(), 300)
+					}
+				}
+
+				// Create a new array with sorted messages
+				const sortedMessages = [...this.currentSession.messages].sort(
+					(a, b) => a.timestamp - b.timestamp
+				)
+				
+				// Display messages in chronological order
+				for (const message of sortedMessages) {
+					const messageEl = document.createElement("div")
+					messageEl.addClass(`gemini-message-${message.role}`)
+
+					if (message.role === "bot") {
+						// Add copy button for bot messages
+						const copyButton = messageEl.createEl("button", {
+							text: "Copy to new note",
+							cls: "copy-response-button",
+						})
+
+						copyButton.addEventListener("click", async () => {
+							const title = this.generateNoteTitle(message.content)
+							const file = await this.app.vault.create(`${title}.md`, message.content)
+							const leaf = this.app.workspace.getLeaf(false)
+							await leaf.openFile(file)
+							new Notice("Response copied to new note!")
+						})
+
+						// Render markdown for bot messages
+						await MarkdownRenderer.renderMarkdown(message.content, messageEl, "", this)
+					} else {
+						// For user messages, show the visible content
+						const visibleContent = this.stripContextFromMessage(message.content)
+						messageEl.textContent = visibleContent
+					}
+
+					this.messagesContainer.appendChild(messageEl)
+				}
+				
+				this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight
 				this.toggleSuggestedActions(false)
 			} else {
 				// Show suggested actions for new chat
