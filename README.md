@@ -1,14 +1,15 @@
 # 🤖 Obsidian Gemini Chatbot Plugin
 
-<div align="center">
+<div align="left">
 
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/tharushkadinujaya05/obsiai)
 ![GitHub all releases](https://img.shields.io/github/downloads/tharushkadinujaya05/obsiai/total)
 ![GitHub](https://img.shields.io/github/license/tharushkadinujaya05/obsiai)
 
-A powerful AI assistant for [Obsidian](https://obsidian.md), featuring a modern floating chat interface powered by Google's Gemini AI.
+A powerful AI assistant plugin for Obsidian (https://obsidian.md) inspired by Notion's AI chatbot. This plugin provides an interactive chatbot powered by Google's Gemini AI, adding a floating chat interface to your Obsidian workspace. It allows you to interact with AI for note summarization, brainstorming, translations, and more.
 
-[Installation](#-installation) • [Features](#-features) • [Usage](#-usage) • [Support](#-support)
+![Screen Recording Nov 16 2024](https://github.com/user-attachments/assets/c9aa500c-99ed-4ab4-9529-8e04090f2a06)
+
 
 </div>
 
@@ -133,7 +134,9 @@ If you find this plugin helpful:
 - ⭐ Star the repository
 - 🐛 Report issues on GitHub
 - 💡 Submit feature requests
-- ☕ [Buy me a coffee](https://buymeacoffee.com/neo_3xd)
+- ☕ If you find this plugin helpful, consider supporting the development:
+ <p><a href="https://www.buymeacoffee.com/neo_3xd"> <img align="left" src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" width="150" alt="neo_3xd" /></a></p><br><br>
+
 
 ---
 
