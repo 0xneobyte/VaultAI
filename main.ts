@@ -55,10 +55,11 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 	async onload() {
 		// Add Font Awesome CSS
-		const fontAwesomeLink = document.createElement('link');
-		fontAwesomeLink.rel = 'stylesheet';
-		fontAwesomeLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
-		document.head.appendChild(fontAwesomeLink);
+		const fontAwesomeLink = document.createElement("link")
+		fontAwesomeLink.rel = "stylesheet"
+		fontAwesomeLink.href =
+			"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+		document.head.appendChild(fontAwesomeLink)
 
 		await this.loadSettings()
 		if (this.settings.apiKey) {
@@ -296,6 +297,10 @@ export default class GeminiChatbotPlugin extends Plugin {
 		this.chatContainer.addClass("gemini-chat-container")
 		this.chatContainer.style.display = "none"
 
+		// Set initial default size
+		this.chatContainer.style.width = "380px"
+		this.chatContainer.style.height = "590px"
+
 		// Add chat components
 		this.chatContainer.innerHTML = `
 			<div class="gemini-chat-header">
@@ -309,9 +314,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 					</button>
 					<button class="more-button">
 						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<circle cx="12" cy="12" r="1"></circle>
-							<circle cx="19" cy="12" r="1"></circle>
-							<circle cx="5" cy="12" r="1"></circle>
+							<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+							<line x1="3" y1="12" x2="21" y2="12"></line>
+							<line x1="12" y1="3" x2="12" y2="21"></line>
 						</svg>
 					</button>
 					<button class="close-button">
@@ -422,12 +427,12 @@ export default class GeminiChatbotPlugin extends Plugin {
 		this.addChatEventListeners()
 
 		// Add resize handle
-		const resizeHandle = document.createElement('div');
-		resizeHandle.addClass('resize-handle');
-		this.chatContainer.appendChild(resizeHandle);
+		const resizeHandle = document.createElement("div")
+		resizeHandle.addClass("resize-handle")
+		this.chatContainer.appendChild(resizeHandle)
 
 		// Add resize functionality
-		this.addResizeFunctionality(resizeHandle);
+		this.addResizeFunctionality(resizeHandle)
 	}
 
 	private addChatEventListeners() {
@@ -499,15 +504,15 @@ export default class GeminiChatbotPlugin extends Plugin {
 		const moreButton = this.chatContainer.querySelector(".more-button")
 		moreButton?.addEventListener("click", (event) => {
 			// Reset size to default dimensions
-			this.chatContainer.style.width = '380px';
-			this.chatContainer.style.height = '590px';
-			
+			this.chatContainer.style.width = "380px"
+			this.chatContainer.style.height = "590px"
+
 			// Ensure position is maintained
-			this.chatContainer.style.bottom = '100px';
-			this.chatContainer.style.right = '20px';
-			
+			this.chatContainer.style.bottom = "100px"
+			this.chatContainer.style.right = "20px"
+
 			// Clear any transforms
-			this.chatContainer.style.transform = 'none';
+			this.chatContainer.style.transform = "none"
 		})
 
 		// Add @ button handler
@@ -538,28 +543,28 @@ export default class GeminiChatbotPlugin extends Plugin {
 	}
 
 	private async toggleChatContainer() {
-		const isVisible = this.chatContainer.style.display !== "none";
-		
+		const isVisible = this.chatContainer.style.display !== "none"
+
 		if (isVisible) {
 			// Add closing animation
-			this.chatContainer.classList.add("closing");
+			this.chatContainer.classList.add("closing")
 			// Wait for animation to complete before hiding
-			await new Promise(resolve => setTimeout(resolve, 300));
-			this.chatContainer.style.display = "none";
-			this.chatContainer.classList.remove("closing");
+			await new Promise((resolve) => setTimeout(resolve, 300))
+			this.chatContainer.style.display = "none"
+			this.chatContainer.classList.remove("closing")
 		} else {
-			this.chatContainer.style.display = "flex";
-			this.currentSession = this.createNewSession();
-			this.showMainChatView();
-			this.toggleSuggestedActions(true);
+			this.chatContainer.style.display = "flex"
+			this.currentSession = this.createNewSession()
+			this.showMainChatView()
+			this.toggleSuggestedActions(true)
 
-			const activeFile = this.app.workspace.getActiveFile();
+			const activeFile = this.app.workspace.getActiveFile()
 			if (activeFile) {
-				this.currentFileContent = await this.app.vault.read(activeFile);
-				this.updateChatHeader();
+				this.currentFileContent = await this.app.vault.read(activeFile)
+				this.updateChatHeader()
 			} else {
-				this.currentFileContent = null;
-				this.updateChatHeader();
+				this.currentFileContent = null
+				this.updateChatHeader()
 			}
 		}
 	}
@@ -574,9 +579,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 	onunload() {
 		// Remove Font Awesome CSS
-		const fontAwesomeLink = document.querySelector('link[href*="font-awesome"]');
+		const fontAwesomeLink = document.querySelector('link[href*="font-awesome"]')
 		if (fontAwesomeLink) {
-			fontAwesomeLink.remove();
+			fontAwesomeLink.remove()
 		}
 
 		this.chatIcon?.remove()
@@ -767,34 +772,34 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 	// Update showChatHistoryView method
 	private showChatHistoryView() {
-		if (!this.chatContainer) return;
+		if (!this.chatContainer) return
 
 		// Hide all other elements
 		const elementsToHide = [
-			'.bot-info',
-			'.suggested-actions',
-			'.chat-input-container',
-			'.gemini-chat-messages'
-		];
-		
-		elementsToHide.forEach(selector => {
-			const el = this.chatContainer.querySelector(selector);
-			if (el) (el as HTMLElement).style.display = 'none';
-		});
+			".bot-info",
+			".suggested-actions",
+			".chat-input-container",
+			".gemini-chat-messages",
+		]
+
+		elementsToHide.forEach((selector) => {
+			const el = this.chatContainer.querySelector(selector)
+			if (el) (el as HTMLElement).style.display = "none"
+		})
 
 		// Remove existing history view if any
-		const existingHistoryView = this.chatContainer.querySelector('.chat-history-view');
+		const existingHistoryView = this.chatContainer.querySelector(".chat-history-view")
 		if (existingHistoryView) {
-			existingHistoryView.classList.add('closing');
+			existingHistoryView.classList.add("closing")
 			setTimeout(() => {
-				existingHistoryView.remove();
-			}, 300);
-			return;
+				existingHistoryView.remove()
+			}, 300)
+			return
 		}
 
 		// Create and show history view
-		const historyView = document.createElement('div');
-		historyView.addClass('chat-history-view');
+		const historyView = document.createElement("div")
+		historyView.addClass("chat-history-view")
 		historyView.innerHTML = `
 			<div class="chat-history-header">
 				<div class="back-button">
@@ -813,39 +818,39 @@ export default class GeminiChatbotPlugin extends Plugin {
 			</div>
 		`
 
-		this.chatContainer.appendChild(historyView);
+		this.chatContainer.appendChild(historyView)
 
 		// Add back button handler with animation
-		const backBtn = historyView.querySelector('.back-button');
-		backBtn?.addEventListener('click', () => {
-			historyView.classList.add('closing');
+		const backBtn = historyView.querySelector(".back-button")
+		backBtn?.addEventListener("click", () => {
+			historyView.classList.add("closing")
 			setTimeout(() => {
-				historyView.remove();
-				this.showMainChatView();
-			}, 300);
-		});
+				historyView.remove()
+				this.showMainChatView()
+			}, 300)
+		})
 
 		// Add event listeners
-		const newChatBtn = historyView.querySelector('.new-chat-button');
-		newChatBtn?.addEventListener('click', () => {
-			this.currentSession = this.createNewSession();
-			historyView.remove();
-			this.showMainChatView();
-		});
+		const newChatBtn = historyView.querySelector(".new-chat-button")
+		newChatBtn?.addEventListener("click", () => {
+			this.currentSession = this.createNewSession()
+			historyView.remove()
+			this.showMainChatView()
+		})
 
 		// Add click handlers for history items
-		this.attachHistoryItemListeners(historyView);
+		this.attachHistoryItemListeners(historyView)
 
-		const searchInput = historyView.querySelector('input');
-		searchInput?.addEventListener('input', (e) => {
-			const query = (e.target as HTMLInputElement).value;
-			this.filterChatHistory(query);
-		});
+		const searchInput = historyView.querySelector("input")
+		searchInput?.addEventListener("input", (e) => {
+			const query = (e.target as HTMLInputElement).value
+			this.filterChatHistory(query)
+		})
 	}
 
 	// Update renderHistorySection to include delete button
 	private renderHistorySection(title: string, sessions: ChatSession[]): string {
-		if (sessions.length === 0) return "";
+		if (sessions.length === 0) return ""
 
 		return `
 			<div class="history-section">
@@ -975,9 +980,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 		items.forEach((item) => {
 			const title = item.querySelector(".history-item-title")?.textContent?.toLowerCase() || ""
 			if (title.includes(query.toLowerCase())) {
-				(item as HTMLElement).style.display = "flex"
+				;(item as HTMLElement).style.display = "flex"
 			} else {
-				(item as HTMLElement).style.display = "none"
+				;(item as HTMLElement).style.display = "none"
 			}
 		})
 	}
@@ -1077,113 +1082,113 @@ export default class GeminiChatbotPlugin extends Plugin {
 	// Add method to generate creative titles
 	private generateNoteTitle(content: string): string {
 		// Try to identify the type of content
-		const isQuiz = content.toLowerCase().includes('quiz') || 
-			content.toLowerCase().includes('question');
-		const isSummary = content.toLowerCase().includes('summary') || 
-			content.toLowerCase().includes('summarize');
-		const isTranslation = content.toLowerCase().includes('translation') || 
-			content.toLowerCase().includes('translated');
+		const isQuiz =
+			content.toLowerCase().includes("quiz") || content.toLowerCase().includes("question")
+		const isSummary =
+			content.toLowerCase().includes("summary") || content.toLowerCase().includes("summarize")
+		const isTranslation =
+			content.toLowerCase().includes("translation") || content.toLowerCase().includes("translated")
 
 		// Get current file name if available
-		const activeFile = this.app.workspace.getActiveFile();
-		const fileName = activeFile ? activeFile.basename : '';
+		const activeFile = this.app.workspace.getActiveFile()
+		const fileName = activeFile ? activeFile.basename : ""
 
 		// Generate base title based on content type
-		let title = '';
+		let title = ""
 		if (isQuiz) {
-			title = `Quiz - ${fileName}`;
+			title = `Quiz - ${fileName}`
 		} else if (isSummary) {
-			title = `Summary - ${fileName}`;
+			title = `Summary - ${fileName}`
 		} else if (isTranslation) {
-			const langMatch = content.match(/translated? to (\w+)/i);
-			const language = langMatch ? langMatch[1] : 'Other Language';
-			title = `${language} Translation - ${fileName}`;
+			const langMatch = content.match(/translated? to (\w+)/i)
+			const language = langMatch ? langMatch[1] : "Other Language"
+			title = `${language} Translation - ${fileName}`
 		} else {
 			// For other types, try to extract meaningful content
-			const headingMatch = content.match(/^#\s+(.+)$/m);
+			const headingMatch = content.match(/^#\s+(.+)$/m)
 			if (headingMatch) {
-				title = `${headingMatch[1].trim()} - ${fileName}`;
+				title = `${headingMatch[1].trim()} - ${fileName}`
 			} else {
-				const firstLine = content.split('\n')[0].trim();
+				const firstLine = content.split("\n")[0].trim()
 				if (firstLine && firstLine.length < 50) {
-					title = `${firstLine} - ${fileName}`;
+					title = `${firstLine} - ${fileName}`
 				} else {
 					// Fallback: Use timestamp
-					const now = new Date();
-					title = `AI Response ${now.toLocaleString('en-US', { 
-						month: 'short', 
-						day: 'numeric',
-						hour: 'numeric',
-						minute: '2-digit'
-					})}`;
+					const now = new Date()
+					title = `AI Response ${now.toLocaleString("en-US", {
+						month: "short",
+						day: "numeric",
+						hour: "numeric",
+						minute: "2-digit",
+					})}`
 				}
 			}
 		}
 
 		// Sanitize the title by removing invalid characters
-		return title.replace(/[\\/:*?"<>|]/g, '-');
+		return title.replace(/[\\/:*?"<>|]/g, "-")
 	}
 
 	private addResizeFunctionality(handle: HTMLElement) {
-		let isResizing = false;
-		let startWidth: number;
-		let startHeight: number;
-		let startX: number;
-		let startY: number;
-		let startBottom: number;
-		let startRight: number;
+		let isResizing = false
+		let startWidth: number
+		let startHeight: number
+		let startX: number
+		let startY: number
+		let startBottom: number
+		let startRight: number
 
-		handle.addEventListener('mousedown', (e: MouseEvent) => {
-			isResizing = true;
-			startWidth = this.chatContainer.offsetWidth;
-			startHeight = this.chatContainer.offsetHeight;
-			startX = e.clientX;
-			startY = e.clientY;
-			
+		handle.addEventListener("mousedown", (e: MouseEvent) => {
+			isResizing = true
+			startWidth = this.chatContainer.offsetWidth
+			startHeight = this.chatContainer.offsetHeight
+			startX = e.clientX
+			startY = e.clientY
+
 			// Store the original bottom and right positions
-			const rect = this.chatContainer.getBoundingClientRect();
-			startBottom = window.innerHeight - rect.bottom;
-			startRight = window.innerWidth - rect.right;
+			const rect = this.chatContainer.getBoundingClientRect()
+			startBottom = window.innerHeight - rect.bottom
+			startRight = window.innerWidth - rect.right
 
 			// Add event listeners
-			document.addEventListener('mousemove', handleMouseMove);
-			document.addEventListener('mouseup', stopResize);
+			document.addEventListener("mousemove", handleMouseMove)
+			document.addEventListener("mouseup", stopResize)
 
 			// Prevent text selection while resizing
-			e.preventDefault();
-		});
+			e.preventDefault()
+		})
 
 		const handleMouseMove = (e: MouseEvent) => {
-			if (!isResizing) return;
+			if (!isResizing) return
 
 			// Calculate new dimensions (expanding leftward and upward)
-			const deltaX = startX - e.clientX;
-			const deltaY = startY - e.clientY;
-			
+			const deltaX = startX - e.clientX
+			const deltaY = startY - e.clientY
+
 			const newWidth = Math.min(
 				Math.max(startWidth + deltaX, 380), // Minimum width: 380px
-				800 // Maximum width: 800px
-			);
-			
+				800, // Maximum width: 800px
+			)
+
 			const newHeight = Math.min(
 				Math.max(startHeight + deltaY, 500), // Minimum height: 500px
-				800 // Maximum height: 800px
-			);
+				800, // Maximum height: 800px
+			)
 
 			// Update container dimensions
-			this.chatContainer.style.width = `${newWidth}px`;
-			this.chatContainer.style.height = `${newHeight}px`;
-			
+			this.chatContainer.style.width = `${newWidth}px`
+			this.chatContainer.style.height = `${newHeight}px`
+
 			// Maintain position relative to bottom-right corner
-			this.chatContainer.style.bottom = `${startBottom}px`;
-			this.chatContainer.style.right = `${startRight}px`;
-		};
+			this.chatContainer.style.bottom = `${startBottom}px`
+			this.chatContainer.style.right = `${startRight}px`
+		}
 
 		const stopResize = () => {
-			isResizing = false;
-			document.removeEventListener('mousemove', handleMouseMove);
-			document.removeEventListener('mouseup', stopResize);
-		};
+			isResizing = false
+			document.removeEventListener("mousemove", handleMouseMove)
+			document.removeEventListener("mouseup", stopResize)
+		}
 	}
 }
 
