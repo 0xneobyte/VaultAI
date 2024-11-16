@@ -39,6 +39,9 @@ If your plugin does not need CSS, delete this file.
 	min-height: 590px;
 	max-height: 800px;
 	transform-origin: bottom right;
+	transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+		height 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+		transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes slideIn {
@@ -48,7 +51,7 @@ If your plugin does not need CSS, delete this file.
 	}
 	to {
 		transform: translateY(0);
-			opacity: 1;
+		opacity: 1;
 	}
 }
 
@@ -1082,64 +1085,81 @@ If your plugin does not need CSS, delete this file.
 
 /* Add these animations for history view */
 @keyframes slideInHistory {
-    from {
-        opacity: 0;
-        transform: translateX(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+	from {
+		opacity: 0;
+		transform: translateX(20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
 }
 
 @keyframes slideOutHistory {
-    from {
-        opacity: 1;
-        transform: translateX(0);
-    }
-    to {
-        opacity: 0;
-        transform: translateX(20px);
-    }
+	from {
+		opacity: 1;
+		transform: translateX(0);
+	}
+	to {
+		opacity: 0;
+		transform: translateX(20px);
+	}
 }
 
 /* Update the chat history view with animation */
 .chat-history-view {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: var(--background-primary);
-    z-index: 1001;
-    display: flex;
-    flex-direction: column;
-    animation: slideInHistory 0.3s ease-out;
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: var(--background-primary);
+	z-index: 1001;
+	display: flex;
+	flex-direction: column;
+	animation: slideInHistory 0.3s ease-out;
 }
 
 .chat-history-view.closing {
-    animation: slideOutHistory 0.3s ease-out;
+	animation: slideOutHistory 0.3s ease-out;
 }
 
 /* Add resize handle to top-left corner */
 .resize-handle {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 20px;
-    height: 20px;
-    cursor: nw-resize;
-    z-index: 1002;
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 20px;
+	height: 20px;
+	cursor: nw-resize;
+	z-index: 1002;
 }
 
 .resize-handle::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 12px;
-    height: 12px;
-    border-left: 2px solid rgba(255, 255, 255, 0.4);
-    border-top: 2px solid rgba(255, 255, 255, 0.4);
-    border-radius: 2px 0 0 0;
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 12px;
+	height: 12px;
+	border-left: 2px solid rgba(255, 255, 255, 0.4);
+	border-top: 2px solid rgba(255, 255, 255, 0.4);
+	border-radius: 2px 0 0 0;
+}
+
+/* Add animation for resetting window size */
+@keyframes resetSize {
+	0% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(0.985);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+.gemini-chat-container.resetting {
+	animation: resetSize 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }

@@ -502,17 +502,26 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 		// Add more options menu
 		const moreButton = this.chatContainer.querySelector(".more-button")
-		moreButton?.addEventListener("click", (event) => {
-			// Reset size to default dimensions
+		moreButton?.addEventListener("click", async () => {
+			// Check if window is already at default size
+			if (
+				this.chatContainer.style.width === "380px" &&
+				this.chatContainer.style.height === "590px"
+			) {
+				return
+			}
+
+			// Add resetting class for animation
+			this.chatContainer.classList.add("resetting")
+
+			// Reset size with smooth transition
 			this.chatContainer.style.width = "380px"
 			this.chatContainer.style.height = "590px"
 
-			// Ensure position is maintained
-			this.chatContainer.style.bottom = "100px"
-			this.chatContainer.style.right = "20px"
-
-			// Clear any transforms
-			this.chatContainer.style.transform = "none"
+			// Remove resetting class after animation
+			setTimeout(() => {
+				this.chatContainer.classList.remove("resetting")
+			}, 400) // Match the new animation duration
 		})
 
 		// Add @ button handler
@@ -980,9 +989,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 		items.forEach((item) => {
 			const title = item.querySelector(".history-item-title")?.textContent?.toLowerCase() || ""
 			if (title.includes(query.toLowerCase())) {
-				(item as HTMLElement).style.display = "flex"
+				;(item as HTMLElement).style.display = "flex"
 			} else {
-				(item as HTMLElement).style.display = "none" 
+				;(item as HTMLElement).style.display = "none"
 			}
 		})
 	}
@@ -1222,7 +1231,7 @@ class GeminiChatbotSettingTab extends PluginSettingTab {
 
 				// Add show/hide password toggle
 				const toggleButton = text.inputEl.createEl("button", {
-					text: "👁️",
+					text: "��️",
 					cls: "password-toggle",
 				})
 				toggleButton.style.position = "absolute"
