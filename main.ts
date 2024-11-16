@@ -980,9 +980,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 		items.forEach((item) => {
 			const title = item.querySelector(".history-item-title")?.textContent?.toLowerCase() || ""
 			if (title.includes(query.toLowerCase())) {
-				;(item as HTMLElement).style.display = "flex"
+				(item as HTMLElement).style.display = "flex"
 			} else {
-				;(item as HTMLElement).style.display = "none"
+				(item as HTMLElement).style.display = "none" 
 			}
 		})
 	}
