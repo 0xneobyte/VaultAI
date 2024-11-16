@@ -73,6 +73,22 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 		// Add chat container
 		this.addChatContainer()
+
+		// Add workspace event listener for active file changes
+		this.registerEvent(
+			this.app.workspace.on('active-leaf-change', async () => {
+				if (this.chatContainer && this.chatContainer.style.display !== "none") {
+					const activeFile = this.app.workspace.getActiveFile()
+					if (activeFile) {
+						this.currentFileContent = await this.app.vault.read(activeFile)
+						this.updateChatHeader()
+					} else {
+						this.currentFileContent = null
+						this.updateChatHeader()
+					}
+				}
+			})
+		);
 	}
 
 	public initializeGeminiService() {
@@ -988,9 +1004,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 		items.forEach((item) => {
 			const title = item.querySelector(".history-item-title")?.textContent?.toLowerCase() || ""
 			if (title.includes(query.toLowerCase())) {
-				;(item as HTMLElement).style.display = "flex"
+				(item as HTMLElement).style.display = "flex"
 			} else {
-				;(item as HTMLElement).style.display = "none"
+				(item as HTMLElement).style.display = "none" 
 			}
 		})
 	}
