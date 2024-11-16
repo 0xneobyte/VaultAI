@@ -10,9 +10,37 @@ A powerful AI assistant for [Obsidian](https://obsidian.md), featuring a modern 
 
 [Installation](#-installation) • [Features](#-features) • [Usage](#-usage) • [Support](#-support)
 
-![Plugin Demo](https://raw.githubusercontent.com/tharushkadinujaya05/obsidian-gemini-chatbot/main/demo.gif)
-
 </div>
+
+## 📑 Table of Contents
+
+<details open>
+<summary>Click to expand/collapse</summary>
+
+### Getting Started
+- [✨ Features](#-features)
+  - [🎨 Modern Interface](#-modern-interface)
+  - [🧠 AI Capabilities](#-ai-capabilities)
+  - [📚 Organization](#-organization)
+  - [🔒 Security](#-security)
+- [🚀 Installation](#-installation)
+  - [Prerequisites](#prerequisites)
+  - [From Community Plugins](#from-obsidian-community-plugins)
+  - [Manual Installation](#manual-installation)
+- [⚙️ Setup](#️-setup)
+
+### Using the Plugin
+- [💡 Usage](#-usage)
+  - [🎯 Quick Actions](#-quick-actions)
+  - [💬 Basic Interaction](#-basic-interaction)
+  - [📜 Chat History](#-chat-history)
+
+### Additional Information
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
+- [💖 Support](#-support)
+
+</details>
 
 ## ✨ Features
 
