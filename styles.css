@@ -945,33 +945,12 @@
 /* Bot message styling */
 .gemini-message-bot {
 	width: 100%;
-	max-height: 400px;
-	overflow-y: auto;
 	background: var(--chat-bot-bg);
 	border: 1px solid var(--chat-border);
 	border-radius: 12px;
 	margin: 8px 0;
 	padding: 16px;
 	position: relative;
-}
-
-/* Scrollbar styling for the bot message */
-.gemini-message-bot::-webkit-scrollbar {
-	width: 8px;
-}
-
-.gemini-message-bot::-webkit-scrollbar-track {
-	background: var(--chat-bot-bg);
-	border-radius: 0 12px 12px 0;
-}
-
-.gemini-message-bot::-webkit-scrollbar-thumb {
-	background: var(--chat-border);
-	border-radius: 4px;
-}
-
-.gemini-message-bot::-webkit-scrollbar-thumb:hover {
-	background: var(--interactive-accent);
 }
 
 /* Copy button */
