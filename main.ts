@@ -1113,52 +1113,51 @@ export default class GeminiChatbotPlugin extends Plugin {
 	// Add method to generate creative titles
 	private generateNoteTitle(content: string): string {
 		// Try to identify the type of content
-		const isQuiz =
-			content.toLowerCase().includes("quiz") || content.toLowerCase().includes("question")
-		const isSummary =
-			content.toLowerCase().includes("summary") || content.toLowerCase().includes("summarize")
-		const isTranslation =
-			content.toLowerCase().includes("translation") || content.toLowerCase().includes("translated")
+		const isQuiz = content.toLowerCase().includes('quiz') || 
+			content.toLowerCase().includes('question');
+		const isSummary = content.toLowerCase().includes('summary') || 
+			content.toLowerCase().includes('summarize');
+		const isTranslation = content.toLowerCase().includes('translation') || 
+			content.toLowerCase().includes('translated');
 
 		// Get current file name if available
-		const activeFile = this.app.workspace.getActiveFile()
-		const fileName = activeFile ? activeFile.basename : ""
+		const activeFile = this.app.workspace.getActiveFile();
+		const fileName = activeFile ? activeFile.basename : '';
 
-		// Generate title based on content type
+		// Generate base title based on content type
+		let title = '';
 		if (isQuiz) {
-			return `Quiz - ${fileName}`
-		}
-		if (isSummary) {
-			return `Summary - ${fileName}`
-		}
-		if (isTranslation) {
-			// Try to detect target language
-			const langMatch = content.match(/translated? to (\w+)/i)
-			const language = langMatch ? langMatch[1] : "Other Language"
-			return `${language} Translation - ${fileName}`
+			title = `Quiz - ${fileName}`;
+		} else if (isSummary) {
+			title = `Summary - ${fileName}`;
+		} else if (isTranslation) {
+			const langMatch = content.match(/translated? to (\w+)/i);
+			const language = langMatch ? langMatch[1] : 'Other Language';
+			title = `${language} Translation - ${fileName}`;
+		} else {
+			// For other types, try to extract meaningful content
+			const headingMatch = content.match(/^#\s+(.+)$/m);
+			if (headingMatch) {
+				title = `${headingMatch[1].trim()} - ${fileName}`;
+			} else {
+				const firstLine = content.split('\n')[0].trim();
+				if (firstLine && firstLine.length < 50) {
+					title = `${firstLine} - ${fileName}`;
+				} else {
+					// Fallback: Use timestamp
+					const now = new Date();
+					title = `AI Response ${now.toLocaleString('en-US', { 
+						month: 'short', 
+						day: 'numeric',
+						hour: 'numeric',
+						minute: '2-digit'
+					})}`;
+				}
+			}
 		}
 
-		// For other types, try to extract meaningful content
-		// First, try to get first heading
-		const headingMatch = content.match(/^#\s+(.+)$/m)
-		if (headingMatch) {
-			return `${headingMatch[1].trim()} - ${fileName}`
-		}
-
-		// If no heading, try first line
-		const firstLine = content.split("\n")[0].trim()
-		if (firstLine && firstLine.length < 50) {
-			return `${firstLine} - ${fileName}`
-		}
-
-		// Fallback: Use file name with timestamp
-		const now = new Date()
-		return `${fileName} Notes - ${now.toLocaleString("en-US", {
-			month: "short",
-			day: "numeric",
-			hour: "numeric",
-			minute: "2-digit",
-		})}`
+		// Sanitize the title by removing invalid characters
+		return title.replace(/[\\/:*?"<>|]/g, '-');
 	}
 
 	private addResizeFunctionality(handle: HTMLElement) {
