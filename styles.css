@@ -16,14 +16,15 @@
 /* Core font import */
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap");
 
-/* Base container styling */
-.gemini-chat-container,
-.gemini-chat-container * {
-	font-family: "Poppins", sans-serif;
-}
-
-/* Main container with glass effect */
+/* Base container styling with theme awareness */
 .gemini-chat-container {
+	--chat-background: var(--background-primary);
+	--chat-text: var(--text-normal);
+	--chat-border: var(--background-modifier-border);
+	--chat-hover: var(--background-modifier-hover);
+	--chat-bot-bg: var(--background-secondary);
+	--chat-user-bg: var(--background-primary-alt);
+	--chat-header-bg: var(--background-secondary-alt);
 	position: fixed;
 	bottom: 100px !important;
 	right: 20px !important;
@@ -31,11 +32,12 @@
 	height: 590px;
 	display: flex;
 	flex-direction: column;
-	background: rgba(255, 255, 255, 0.2);
-	backdrop-filter: blur(20px) saturate(180%);
+	background: var(--chat-background);
+	color: var(--chat-text);
+	border: 1px solid var(--chat-border);
 	border-radius: 12px;
-	border: 1px solid rgba(255, 255, 255, 0.4);
-	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+	box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+	backdrop-filter: blur(10px);
 	z-index: 1000;
 	overflow: hidden;
 	animation: slideIn 0.3s ease-out;
@@ -80,11 +82,12 @@
 /* Simplified header */
 .gemini-chat-header {
 	padding: 12px 16px;
-	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+	border-bottom: 1px solid var(--chat-border);
 	display: flex;
 	justify-content: flex-end;
 	align-items: center;
-	background: rgba(255, 255, 255, 0.1);
+	background: var(--chat-header-bg);
+	border-radius: 12px 12px 0 0;
 }
 
 .chat-header-controls {
@@ -95,8 +98,9 @@
 .chat-header-controls button {
 	width: 32px;
 	height: 32px;
-	background: rgba(0, 0, 0, 0.03);
-	border: none;
+	background: var(--chat-bot-bg);
+	color: var(--chat-text);
+	border: 1px solid var(--chat-border);
 	border-radius: 6px;
 	cursor: pointer;
 	display: flex;
@@ -107,7 +111,7 @@
 }
 
 .chat-header-controls button:hover {
-	background: rgba(0, 0, 0, 0.06);
+	background: var(--chat-hover);
 }
 
 .chat-header-controls svg {
@@ -128,13 +132,22 @@
 	display: flex;
 	align-items: flex-start;
 	gap: 16px;
+	transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+.bot-info.hidden {
+	opacity: 0;
+	transform: translateY(-20px);
+	pointer-events: none;
+	position: absolute;
 }
 
 .bot-avatar {
 	width: 48px;
 	height: 48px;
 	border-radius: 50%;
-	background-color: rgba(255, 255, 255, 0.1);
+	background-color: var(--chat-bot-bg);
+	border: 1px solid var(--chat-border);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -146,7 +159,7 @@
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
-	background: white;
+	background: var(--chat-bot-bg);
 	border-radius: 50%;
 }
 
@@ -160,6 +173,15 @@
 /* Suggested Actions */
 .suggested-actions {
 	padding: 0 24px;
+	background: var(--chat-background);
+	transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+.suggested-actions.hidden {
+	opacity: 0;
+	transform: translateY(-20px);
+	pointer-events: none;
+	position: absolute;
 }
 
 .suggested-actions h3 {
@@ -178,13 +200,14 @@
 	border-radius: 8px;
 	cursor: pointer;
 	transition: all 0.2s;
-	border: 1px solid rgba(0, 0, 0, 0.1);
+	border: 1px solid var(--chat-border);
 	width: 100%;
-	background: transparent;
+	background: var(--chat-bot-bg);
+	color: var(--text-normal);
 }
 
 .action-button:hover {
-	background-color: rgba(0, 0, 0, 0.05);
+	background: var(--chat-hover);
 }
 
 .action-icon {
@@ -203,8 +226,8 @@
 .chat-input-container {
 	margin-top: auto;
 	padding: 16px;
-	background: rgba(255, 255, 255, 0.5);
-	border-top: 1px solid rgba(0, 0, 0, 0.1);
+	background: var(--chat-background);
+	border-top: 1px solid var(--chat-border);
 }
 
 .chat-input-wrapper {
@@ -212,20 +235,21 @@
 	align-items: center;
 	gap: 8px;
 	padding: 8px;
-	border: 1px solid rgba(0, 0, 0, 0.1);
+	border: 1px solid var(--chat-border);
 	border-radius: 8px;
-	background-color: rgba(255, 255, 255, 0.8);
+	background-color: var(--chat-bot-bg);
 }
 
 .chat-input {
 	flex-grow: 1;
 	border: none;
-	background: none;
+	background: transparent;
 	padding: 8px;
 	font-size: 0.95em;
 	min-height: 24px;
 	max-height: 80px;
 	resize: none;
+	color: var(--text-normal);
 }
 
 .input-actions {
@@ -249,7 +273,7 @@
 
 .input-actions button:hover {
 	opacity: 1;
-	background: rgba(0, 0, 0, 0.05);
+	background: var(--chat-hover);
 }
 
 /* Add to existing styles.css */
@@ -262,8 +286,8 @@
 	gap: 12px;
 	min-height: 0;
 	height: calc(100% - 140px);
-	background: rgba(255, 255, 255, 0.1);
-	border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+	background: var(--chat-background);
+	border-bottom: 1px solid var(--chat-border);
 }
 
 .gemini-message-user,
@@ -285,8 +309,8 @@
 
 .gemini-message-bot {
 	width: 100%;
-	background: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
+	background: var(--chat-bot-bg);
+	border: 1px solid var(--chat-border);
 	padding: 16px;
 	position: relative;
 	flex-shrink: 0;
@@ -386,8 +410,8 @@
 /* Improve markdown rendering in messages */
 .gemini-message-bot {
 	max-width: 100%;
-	background: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
+	background: var(--chat-bot-bg);
+	border: 1px solid var(--chat-border);
 	border-radius: 8px;
 	margin: 8px 0;
 }
@@ -405,7 +429,8 @@
 }
 
 .response-content pre {
-	background: var(--background-secondary);
+	background: var(--code-background);
+	border: 1px solid var(--chat-border);
 	padding: 12px;
 	border-radius: 4px;
 	overflow-x: auto;
@@ -432,7 +457,7 @@
 
 .response-content th,
 .response-content td {
-	border: 1px solid var(--background-modifier-border);
+	border: 1px solid var(--chat-border);
 	padding: 6px 8px;
 	text-align: left;
 }
@@ -600,12 +625,12 @@
 	border-radius: 8px;
 	cursor: pointer;
 	transition: all 0.2s ease;
-	background: rgba(255, 255, 255, 0.1);
+	background: var(--chat-bot-bg);
 	margin-bottom: 8px;
 }
 
 .history-item:hover {
-	background: rgba(255, 255, 255, 0.2);
+	background: var(--chat-hover);
 }
 
 .history-item-icon {
@@ -707,8 +732,8 @@
 
 /* Response Formatting */
 .gemini-message-bot {
-	background: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
+	background: var(--chat-bot-bg);
+	border: 1px solid var(--chat-border);
 	border-radius: 8px;
 	overflow: hidden;
 }
@@ -722,8 +747,9 @@
 }
 
 .copy-response-button {
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background: var(--chat-bot-bg);
+	color: var(--chat-text);
+	border: 1px solid var(--chat-border);
 	padding: 4px 8px;
 	border-radius: 4px;
 	border: none;
@@ -763,7 +789,7 @@
 }
 
 .response-content code {
-	background: var(--background-secondary);
+	background: var(--code-background);
 	padding: 0.2em 0.4em;
 	border-radius: 3px;
 	font-family: var(--font-monospace);
@@ -771,7 +797,7 @@
 }
 
 .response-content pre {
-	background: var(--background-secondary);
+	background: var(--code-background);
 	padding: 1em;
 	border-radius: 4px;
 	overflow-x: auto;
@@ -790,8 +816,9 @@
 	position: absolute;
 	top: 8px;
 	right: 8px;
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background: var(--chat-bot-bg);
+	color: var(--chat-text);
+	border: 1px solid var(--chat-border);
 	padding: 4px 8px;
 	border-radius: 4px;
 	border: none;
@@ -832,7 +859,7 @@
 }
 
 .gemini-message-bot pre {
-	background: var(--background-secondary);
+	background: var(--code-background);
 	padding: 12px 16px;
 	border-radius: 8px;
 	margin: 1em 0;
@@ -840,7 +867,7 @@
 }
 
 .gemini-message-bot code {
-	background: var(--background-secondary);
+	background: var(--code-background);
 	padding: 0.2em 0.4em;
 	border-radius: 4px;
 	font-family: var(--font-monospace);
@@ -934,33 +961,12 @@
 /* Bot message styling */
 .gemini-message-bot {
 	width: 100%;
-	max-height: 400px;
-	overflow-y: auto;
-	background: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
+	background: var(--chat-bot-bg);
+	border: 1px solid var(--chat-border);
 	border-radius: 12px;
 	margin: 8px 0;
 	padding: 16px;
 	position: relative;
-}
-
-/* Scrollbar styling for the bot message */
-.gemini-message-bot::-webkit-scrollbar {
-	width: 8px;
-}
-
-.gemini-message-bot::-webkit-scrollbar-track {
-	background: var(--background-primary);
-	border-radius: 0 12px 12px 0;
-}
-
-.gemini-message-bot::-webkit-scrollbar-thumb {
-	background: var(--background-modifier-border);
-	border-radius: 4px;
-}
-
-.gemini-message-bot::-webkit-scrollbar-thumb:hover {
-	background: var(--interactive-accent);
 }
 
 /* Copy button */
@@ -968,8 +974,9 @@
 	position: absolute;
 	top: 8px;
 	right: 8px;
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background: var(--chat-bot-bg);
+	color: var(--chat-text);
+	border: 1px solid var(--chat-border);
 	padding: 4px 8px;
 	border-radius: 4px;
 	border: none;
@@ -1004,7 +1011,7 @@
 }
 
 .gemini-message-bot pre {
-	background: var(--background-secondary);
+	background: var(--code-background);
 	padding: 12px 16px;
 	border-radius: 4px;
 	overflow-x: auto;
@@ -1012,7 +1019,7 @@
 }
 
 .gemini-message-bot code {
-	background: var(--background-secondary);
+	background: var(--code-background);
 	padding: 0.2em 0.4em;
 	border-radius: 3px;
 	font-size: 0.9em;
@@ -1024,16 +1031,16 @@
 }
 
 .gemini-chat-messages::-webkit-scrollbar-track {
-	background: var(--background-primary);
+	background: var(--chat-background);
 }
 
 .gemini-chat-messages::-webkit-scrollbar-thumb {
-	background: var(--background-modifier-border);
+	background: var(--chat-border);
 	border-radius: 4px;
 }
 
 .gemini-chat-messages::-webkit-scrollbar-thumb:hover {
-	background: var(--interactive-accent);
+	background: var(--chat-hover);
 }
 
 /* Floating Chat Icon */
@@ -1043,8 +1050,8 @@
 	right: 20px !important;
 	width: 40px;
 	height: 40px;
-	background-color: rgba(255, 255, 255, 0.5);
-	border: 1px solid rgba(255, 255, 255, 0.3);
+	background-color: var(--chat-header-bg);
+	border: 1px solid var(--chat-border);
 	border-radius: 50%;
 	display: flex;
 	align-items: center;
@@ -1058,6 +1065,7 @@
 
 .gemini-chat-icon:hover {
 	transform: scale(1.1);
+	background-color: var(--chat-hover);
 }
 
 /* Load Recent Chats Animation */
@@ -1148,8 +1156,8 @@
 	top: 0;
 	width: 12px;
 	height: 12px;
-	border-left: 2px solid rgba(255, 255, 255, 0.4);
-	border-top: 2px solid rgba(255, 255, 255, 0.4);
+	border-left: 2px solid var(--chat-border);
+	border-top: 2px solid var(--chat-border);
 	border-radius: 2px 0 0 0;
 }
 
