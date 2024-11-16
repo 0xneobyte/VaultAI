@@ -576,6 +576,61 @@ export default class GeminiChatbotPlugin extends Plugin {
 			this.chatContainer.style.display = "none"
 			this.chatContainer.classList.remove("closing")
 		} else {
+			// Reset the chat container content
+			if (this.messagesContainer) {
+				this.messagesContainer.innerHTML = ""
+			}
+
+			// Recreate bot-info and suggested-actions if they don't exist
+			const existingBotInfo = this.chatContainer.querySelector('.bot-info')
+			const existingSuggestedActions = this.chatContainer.querySelector('.suggested-actions')
+
+			if (!existingBotInfo) {
+				const botInfo = document.createElement('div')
+				botInfo.addClass('bot-info')
+				botInfo.innerHTML = `
+					<div class="bot-avatar">
+						<svg viewBox="0 0 1080 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<!-- Your existing SVG code -->
+						</svg>
+					</div>
+					<div class="bot-greeting">Hello, How can I help you today?</div>
+				`
+				// Insert bot-info after the header
+				const header = this.chatContainer.querySelector('.gemini-chat-header')
+				header?.after(botInfo)
+			}
+
+			if (!existingSuggestedActions) {
+				const suggestedActions = document.createElement('div')
+				suggestedActions.addClass('suggested-actions')
+				suggestedActions.innerHTML = `
+					<h3>Suggested</h3>
+					<div class="action-button">
+						<span class="action-icon">📝</span>
+						Summarize this page
+					</div>
+					<div class="action-button">
+						<span class="action-icon">🔍</span>
+						Ask about this page
+					</div>
+					<div class="action-button">
+						<span class="action-icon">📚</span>
+						Make a quiz
+					</div>
+					<div class="action-button">
+						<span class="action-icon">🌐</span>
+						Translate to
+					</div>
+				`
+				// Insert suggested-actions before the chat input container
+				const inputContainer = this.chatContainer.querySelector('.chat-input-container')
+				inputContainer?.before(suggestedActions)
+
+				// Reattach event listeners for action buttons
+				this.addActionButtonListeners()
+			}
+
 			this.chatContainer.style.display = "flex"
 			this.currentSession = this.createNewSession()
 			this.showMainChatView()
@@ -590,6 +645,32 @@ export default class GeminiChatbotPlugin extends Plugin {
 				this.updateChatHeader()
 			}
 		}
+	}
+
+	// Add this new method to handle action button listeners
+	private addActionButtonListeners() {
+		const actionButtons = this.chatContainer.querySelectorAll(".action-button")
+		actionButtons.forEach((button) => {
+			button.addEventListener("click", () => {
+				if (!this.inputField) return
+
+				if (button.textContent?.includes("Summarize")) {
+					this.inputField.value = "Can you summarize this note for me?"
+				} else if (button.textContent?.includes("Ask about")) {
+					this.inputField.value = "What is this note about?"
+				} else if (button.textContent?.includes("Make a quiz")) {
+					this.inputField.value = "Can you create a quiz using this note?"
+				} else if (button.textContent?.includes("Translate")) {
+					new LanguageSelectionModal(this.app, (language: string) => {
+						if (this.inputField) {
+							this.inputField.value = `Can you translate this note to ${language}?`
+						}
+					}).open()
+				}
+
+				this.inputField.focus()
+			})
+		})
 	}
 
 	async loadSettings() {
