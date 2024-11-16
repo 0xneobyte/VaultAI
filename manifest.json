@@ -1,14 +1,22 @@
 {
-	"id": "obsidian-gemini-chatbot",
-	"name": "Gemini Chatbot",
+	"id": "obsi-ai",
+	"name": "ObsiAI",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "An AI-powered chatbot using Google's Gemini API that provides a floating chat interface for note summarization, brainstorming, and more.",
+	"description": "A powerful AI assistant powered by Google's Gemini AI, featuring a modern floating chat interface inspired by Notion AI.",
 	"author": "Neo",
-	"authorUrl": "https://github.com/tharushkadinujaya05",
+	"authorUrl": "https://github.com/neo",
 	"isDesktopOnly": false,
 	"fundingUrl": {
-		"Buy Me a Coffee": "https://buymeacoffee.com/yourusername",
-		"GitHub Sponsor": "https://github.com/sponsors/yourusername"
-	}
+		"Buy Me a Coffee": "https://buymeacoffee.com/neo_3xd"
+	},
+	"keywords": [
+		"ai",
+		"chatbot",
+		"gemini",
+		"assistant",
+		"summarize",
+		"translate",
+		"notion"
+	]
 }
