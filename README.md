@@ -77,18 +77,18 @@ A powerful AI assistant for [Obsidian](https://obsidian.md), featuring a modern 
 ### From Obsidian Community Plugins
 1. Open Obsidian Settings > Community plugins
 2. Disable Safe mode
-3. Click Browse and search for "Gemini Chatbot"
+3. Click Browse and search for "ObsiAI"
 4. Install and enable the plugin
 
 ### Manual Installation
-1. Download the latest release from the [releases page](https://github.com/tharushkadinujaya05/obsidian-gemini-chatbot/releases)
-2. Extract the files to your `.obsidian/plugins/obsidian-gemini-chatbot` folder
+1. Download the latest release from the [releases page](https://github.com/tharushkadinujaya05/obsiai/releases)
+2. Extract the files to your `.obsidian/plugins/obsiai` folder
 3. Reload Obsidian
 4. Enable the plugin in Settings > Community plugins
 
 ## ⚙️ Setup
 1. Get your Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Open Obsidian Settings > Gemini Chatbot
+2. Open Obsidian Settings > ObsiAI
 3. Enter your API key
 4. Start chatting!
 
