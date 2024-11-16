@@ -4,6 +4,7 @@ import { LanguageSelectionModal } from "./src/modals/LanguageSelectionModal"
 import { MarkdownRenderer } from "obsidian"
 import { FileSelectionModal } from "./src/modals/FileSelectionModal"
 
+// Core interfaces for chat functionality
 interface ChatMessage {
 	role: "user" | "bot"
 	content: string
@@ -19,25 +20,21 @@ interface ChatSession {
 
 interface GeminiChatbotSettings {
 	apiKey: string
-	floatingPosition: {
-		x: number
-		y: number
-	}
+	floatingPosition: { x: number, y: number }
 	isDocked: boolean
 	chatSessions: ChatSession[]
 }
 
+// Default plugin settings
 const DEFAULT_SETTINGS: GeminiChatbotSettings = {
 	apiKey: "",
-	floatingPosition: {
-		x: 20,
-		y: 20,
-	},
+	floatingPosition: { x: 20, y: 20 },
 	isDocked: false,
 	chatSessions: [],
 }
 
 export default class GeminiChatbotPlugin extends Plugin {
+	// Core plugin properties
 	settings: GeminiChatbotSettings
 	chatIcon: HTMLElement
 	chatContainer: HTMLElement
@@ -49,9 +46,11 @@ export default class GeminiChatbotPlugin extends Plugin {
 	private isFullPage = false
 	private currentSession: ChatSession | null = null
 	private referencedFiles: Map<string, string> | null = null
+	
+	// Rate limiting and context management
 	private lastApiCall = 0
-	private readonly API_COOLDOWN = 1000 // 1 second cooldown between calls
-	private readonly MAX_CONTEXT_LENGTH = 30000 // Limit context length to avoid token limits
+	private readonly API_COOLDOWN = 1000  // Prevent rapid-fire API calls
+	private readonly MAX_CONTEXT_LENGTH = 30000  // Prevent token limit issues
 
 	async onload() {
 		// Add Font Awesome CSS
@@ -1231,7 +1230,7 @@ class GeminiChatbotSettingTab extends PluginSettingTab {
 
 				// Add show/hide password toggle
 				const toggleButton = text.inputEl.createEl("button", {
-					text: "��️",
+					text: "️",
 					cls: "password-toggle",
 				})
 				toggleButton.style.position = "absolute"

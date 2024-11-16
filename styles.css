@@ -1,22 +1,28 @@
 /*
+ * Obsidian Gemini Chatbot Plugin Styles
+ * 
+ * This stylesheet contains all the UI components for the chatbot interface.
+ * The design follows a modern, glassy aesthetic with smooth animations.
+ * 
+ * Structure:
+ * 1. Core container styles
+ * 2. Header and controls
+ * 3. Chat messages and input
+ * 4. Animations
+ * 5. History view
+ * 6. Utility classes
+ */
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
-
-If your plugin does not need CSS, delete this file.
-
-*/
-
-/* Import Poppins font */
+/* Core font import */
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap");
 
-/* Apply Poppins font to the entire chat panel */
+/* Base container styling */
 .gemini-chat-container,
 .gemini-chat-container * {
 	font-family: "Poppins", sans-serif;
 }
 
-/* Enhanced glassy look for the chat container */
+/* Main container with glass effect */
 .gemini-chat-container {
 	position: fixed;
 	bottom: 100px !important;
