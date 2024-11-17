@@ -6,7 +6,7 @@ export class GeminiService {
 
     constructor(apiKey: string) {
         const genAI = new GoogleGenerativeAI(apiKey);
-        this.model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        this.model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
         this.startChat();
     }
 
