@@ -320,31 +320,55 @@ export default class GeminiChatbotPlugin extends Plugin {
 	}
 
 	private addErrorMessage(message: string) {
-		const errorDiv = document.createElement("div")
-		errorDiv.addClass("gemini-message-error")
-		errorDiv.innerHTML = `
-			<div class="error-icon">⚠️</div>
-			<div class="error-content">${message}</div>
-		`
-		this.messagesContainer?.appendChild(errorDiv)
+		const errorDiv = createEl("div", { cls: "gemini-message-error" });
+		
+		const iconDiv = createEl("div", { 
+			cls: "error-icon",
+			text: "⚠️"
+		});
+		
+		const contentDiv = createEl("div", {
+			cls: "error-content",
+			text: message
+		});
+		
+		errorDiv.appendChild(iconDiv);
+		errorDiv.appendChild(contentDiv);
+		
+		this.messagesContainer?.appendChild(errorDiv);
 		if (this.messagesContainer) {
-			this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight
+			this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
 		}
 	}
 
 	private addFloatingIcon() {
-		this.chatIcon = document.createElement("div")
-		this.chatIcon.addClass("gemini-chat-icon")
-		this.chatIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-			<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-		</svg>`
-
-		// Add click handler
+		this.chatIcon = createEl("div", { cls: "gemini-chat-icon" });
+		
+		const svg = createSvg("svg", {
+			attr: {
+				width: "24",
+				height: "24",
+				viewBox: "0 0 24 24",
+				fill: "none",
+				stroke: "currentColor",
+				"stroke-width": "2"
+			}
+		});
+		
+		const path = createSvg("path", {
+			attr: {
+				d: "M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"
+			}
+		});
+		
+		svg.appendChild(path);
+		this.chatIcon.appendChild(svg);
+		
 		this.chatIcon.addEventListener("click", () => {
-			this.toggleChatContainer()
-		})
-
-		document.body.appendChild(this.chatIcon)
+			this.toggleChatContainer();
+		});
+		
+		document.body.appendChild(this.chatIcon);
 	}
 
 	private addChatContainer() {
@@ -1176,9 +1200,11 @@ export default class GeminiChatbotPlugin extends Plugin {
 		items.forEach((item) => {
 			const title = item.querySelector(".history-item-title")?.textContent?.toLowerCase() || ""
 			if (title.includes(query.toLowerCase())) {
-				(item as HTMLElement).style.display = "flex"
+				item.classList.remove("hidden")
+				item.classList.add("visible")
 			} else {
-				(item as HTMLElement).style.display = "none" 
+				item.classList.add("hidden")
+				item.classList.remove("visible")
 			}
 		})
 	}

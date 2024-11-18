@@ -1200,3 +1200,48 @@
     flex: 1;
     line-height: 1.4;
 }
+
+/* Password toggle button */
+.password-toggle {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+/* Chat icon styles */
+.gemini-chat-icon {
+  position: fixed;
+  bottom: 40px !important;
+  right: 20px !important;
+  width: 40px;
+  height: 40px;
+  background-color: var(--chat-header-bg);
+  border: 1px solid var(--chat-border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  z-index: 1000;
+  padding: 8px;
+}
+
+.gemini-chat-icon:hover {
+  transform: scale(1.1);
+  background-color: var(--chat-hover);
+}
+
+/* History item visibility */
+.history-item.hidden {
+  display: none;
+}
+
+.history-item.visible {
+  display: flex;
+}
