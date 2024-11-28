@@ -1245,3 +1245,47 @@
 .history-item.visible {
   display: flex;
 }
+
+/* Add styles for password toggle button */
+.setting-item-control {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.password-toggle:hover {
+  opacity: 1;
+}
+
+/* Add styles for error message */
+.gemini-message-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 16px;
+  padding: 12px 16px;
+  background: var(--background-modifier-error);
+  border-radius: 8px;
+  color: var(--text-error);
+  font-size: 0.9em;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.error-icon {
+  font-size: 1.2em;
+}
+
+.error-content {
+  flex: 1;
+  line-height: 1.4;
+}

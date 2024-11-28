@@ -992,109 +992,139 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 	// Update showChatHistoryView method
 	private showChatHistoryView() {
-		if (!this.chatContainer) return
+		if (!this.chatContainer) return;
 
-		// Hide all other elements
-		const elementsToHide = [
-			".bot-info",
-			".suggested-actions",
-			".chat-input-container",
-			".gemini-chat-messages",
-		]
-
-		elementsToHide.forEach((selector) => {
-			const el = this.chatContainer.querySelector(selector)
-			if (el) (el as HTMLElement).style.display = "none"
-		})
+		// Hide existing elements
+		const elementsToHide = [".bot-info", ".suggested-actions", ".chat-input-container", ".gemini-chat-messages"];
+		elementsToHide.forEach(selector => {
+			const el = this.chatContainer.querySelector(selector);
+			if (el) (el as HTMLElement).style.display = "none";
+		});
 
 		// Remove existing history view if any
-		const existingHistoryView = this.chatContainer.querySelector(".chat-history-view")
+		const existingHistoryView = this.chatContainer.querySelector(".chat-history-view");
 		if (existingHistoryView) {
-			existingHistoryView.classList.add("closing")
-			setTimeout(() => {
-				existingHistoryView.remove()
-			}, 300)
-			return
+			existingHistoryView.classList.add("closing");
+			setTimeout(() => existingHistoryView.remove(), 300);
+			return;
 		}
 
-		// Create and show history view
-		const historyView = document.createElement("div")
-		historyView.addClass("chat-history-view")
-		historyView.innerHTML = `
-			<div class="chat-history-header">
-				<div class="back-button">
-					<svg width="16" height="16" viewBox="0 0 24 24">
-						<path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
-					</svg>
-				</div>
-				<h2>All chats</h2>
-				<div class="new-chat-button">New chat</div>
-			</div>
-			<div class="chat-history-search">
-				<input type="text" placeholder="Search or start new chat">
-			</div>
-			<div class="chat-history-sections">
-				${this.renderChatHistorySections()}
-			</div>
-		`
+		// Create history view using DOM API
+		const historyView = createDiv({ cls: "chat-history-view" });
 
-		this.chatContainer.appendChild(historyView)
+		// Create header
+		const header = createDiv({ cls: "chat-history-header" });
+		
+		// Back button
+		const backButton = createDiv({ cls: "back-button" });
+		const backIcon = createSvg("svg", {
+			attr: {
+				width: "16",
+				height: "16",
+				viewBox: "0 0 24 24"
+			}
+		});
+		const backPath = createSvg("path", {
+			attr: {
+				fill: "currentColor",
+				d: "M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"
+			}
+		});
+		backIcon.appendChild(backPath);
+		backButton.appendChild(backIcon);
 
-		// Add back button handler with animation
-		const backBtn = historyView.querySelector(".back-button")
-		backBtn?.addEventListener("click", () => {
-			historyView.classList.add("closing")
-			setTimeout(() => {
-				historyView.remove()
-				this.showMainChatView()
-			}, 300)
-		})
+		// Title
+		const title = createEl("h2", { text: "All chats" });
+
+		// New chat button
+		const newChatButton = createDiv({ 
+			cls: "new-chat-button",
+			text: "New chat"
+		});
+
+		header.appendChild(backButton);
+		header.appendChild(title);
+		header.appendChild(newChatButton);
+
+		// Search input
+		const searchContainer = createDiv({ cls: "chat-history-search" });
+		const searchInput = createEl("input", {
+			type: "text",
+			placeholder: "Search or start new chat"
+		});
+		searchContainer.appendChild(searchInput);
+
+		// History sections
+		const sectionsContainer = createDiv({ cls: "chat-history-sections" });
+		this.renderChatHistorySections(sectionsContainer);
+
+		// Append all elements
+		historyView.appendChild(header);
+		historyView.appendChild(searchContainer);
+		historyView.appendChild(sectionsContainer);
+
+		this.chatContainer.appendChild(historyView);
 
 		// Add event listeners
-		const newChatBtn = historyView.querySelector(".new-chat-button")
-		newChatBtn?.addEventListener("click", () => {
-			this.currentSession = this.createNewSession()
-			historyView.remove()
-			this.showMainChatView()
-		})
-
-		// Add click handlers for history items
-		this.attachHistoryItemListeners(historyView)
-
-		const searchInput = historyView.querySelector("input")
-		searchInput?.addEventListener("input", (e) => {
-			const query = (e.target as HTMLInputElement).value
-			this.filterChatHistory(query)
-		})
+		this.attachHistoryViewListeners(historyView);
 	}
 
-	// Update renderHistorySection to include delete button
-	private renderHistorySection(title: string, sessions: ChatSession[]): string {
-		if (sessions.length === 0) return ""
+	// Update renderHistorySection to use DOM API
+	private renderHistorySection(container: HTMLElement, title: string, sessions: ChatSession[]) {
+		if (sessions.length === 0) return;
 
-		return `
-			<div class="history-section">
-				<h3>${title}</h3>
-				${sessions
-					.map(
-						(session) => `
-					<div class="history-item" data-session-id="${session.id}">
-						<div class="history-item-icon">💬</div>
-						<div class="history-item-content">
-							<div class="history-item-title">${session.title}</div>
-							<div class="history-item-time">${this.formatTime(session.timestamp)}</div>
-						</div>
-						<div class="delete-chat" data-session-id="${session.id}">
-							<svg width="14" height="14" viewBox="0 0 24 24">
-								<path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14l2.12 2.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.13-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/>
-							</svg>
-						</div>
-					</div>
-				`,
-					)
-					.join("")}
-			</div>
-		`
+		const section = createDiv({ cls: "history-section" });
+		const heading = createEl("h3", { text: title });
+		section.appendChild(heading);
+
+		sessions.forEach(session => {
+			const item = createDiv({ cls: "history-item" });
+			item.setAttribute("data-session-id", session.id);
+
+			const icon = createDiv({ 
+				cls: "history-item-icon",
+				text: "💬"
+			});
+
+			const content = createDiv({ cls: "history-item-content" });
+			const itemTitle = createDiv({ 
+				cls: "history-item-title",
+				text: session.title
+			});
+			const itemTime = createDiv({ 
+				cls: "history-item-time",
+				text: this.formatTime(session.timestamp)
+			});
+
+			content.appendChild(itemTitle);
+			content.appendChild(itemTime);
+
+			const deleteBtn = createDiv({ cls: "delete-chat" });
+			deleteBtn.setAttribute("data-session-id", session.id);
+			
+			const deleteIcon = createSvg("svg", {
+				attr: {
+					width: "14",
+					height: "14",
+					viewBox: "0 0 24 24"
+				}
+			});
+			const deletePath = createSvg("path", {
+				attr: {
+					fill: "currentColor",
+					d: "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14l2.12 2.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.13-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"
+				}
+			});
+			deleteIcon.appendChild(deletePath);
+			deleteBtn.appendChild(deleteIcon);
+
+			item.appendChild(icon);
+			item.appendChild(content);
+			item.appendChild(deleteBtn);
+			section.appendChild(item);
+		});
+
+		container.appendChild(section);
 	}
 
 	// Add method to handle chat deletion
@@ -1500,13 +1530,6 @@ class GeminiChatbotSettingTab extends PluginSettingTab {
 					text: "️",
 					cls: "password-toggle",
 				})
-				toggleButton.style.position = "absolute"
-				toggleButton.style.right = "5px"
-				toggleButton.style.top = "50%"
-				toggleButton.style.transform = "translateY(-50%)"
-				toggleButton.style.background = "transparent"
-				toggleButton.style.border = "none"
-				toggleButton.style.cursor = "pointer"
 
 				toggleButton.addEventListener("click", (e) => {
 					e.preventDefault()
