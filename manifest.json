@@ -1,14 +1,14 @@
 {
 	"id": "obsi-ai",
 	"name": "ObsiAI",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"minAppVersion": "0.15.0",
 	"description": "A powerful AI assistant powered by Google's Gemini AI, featuring a modern floating chat interface inspired by Notion AI.",
 	"author": "Tharushka Dinujaya",
-	"authorUrl": "https://github.com/tharushkadinujaya05",
+	"authorUrl": "https://github.com/0xneobyte",
 	"isDesktopOnly": false,
 	"fundingUrl": {
-		"Buy Me a Coffee": "https://buymeacoffee.com/neo_3xd"
+		"Buy Me a Coffee": "https://buymeacoffee.com/0xneobyte"
 	},
 	"keywords": [
 		"ai",
