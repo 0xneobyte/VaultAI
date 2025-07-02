@@ -9,14 +9,5 @@
 	"isDesktopOnly": false,
 	"fundingUrl": {
 		"Buy Me a Coffee": "https://buymeacoffee.com/0xneobyte"
-	},
-	"keywords": [
-		"ai",
-		"chatbot",
-		"gemini",
-		"assistant",
-		"summarize",
-		"translate",
-		"notion"
-	]
+	}
 }
