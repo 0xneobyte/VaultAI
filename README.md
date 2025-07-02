@@ -2,9 +2,9 @@
 
 <div align="left">
 
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/tharushkadinujaya05/obsiai)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/0xneobyte/obsiai)
 ![GitHub all releases](https://img.shields.io/github/downloads/tharushkadinujaya05/obsiai/total)
-![GitHub](https://img.shields.io/github/license/tharushkadinujaya05/obsiai)
+![GitHub](https://img.shields.io/github/license/0xneobyte/obsiai)
 
 A powerful AI assistant plugin for Obsidian (https://obsidian.md) inspired by Notion's AI chatbot. This plugin provides an interactive chatbot powered by Google's Gemini AI, adding a floating chat interface to your Obsidian workspace. It allows you to interact with AI for note summarization, brainstorming, translations, and more.
 
@@ -82,7 +82,7 @@ A powerful AI assistant plugin for Obsidian (https://obsidian.md) inspired by No
 4. Install and enable the plugin
 
 ### Manual Installation
-1. Download the latest release from the [releases page](https://github.com/tharushkadinujaya05/obsiai/releases)
+1. Download the latest release from the [releases page](https://github.com/0xneobyte/obsiai/releases)
 2. Extract the files to your `.obsidian/plugins/obsiai` folder
 3. Reload Obsidian
 4. Enable the plugin in Settings > Community plugins
@@ -135,13 +135,13 @@ If you find this plugin helpful:
 - 🐛 Report issues on GitHub
 - 💡 Submit feature requests
 - ☕ If you find this plugin helpful, consider supporting the development:
- <p><a href="https://www.buymeacoffee.com/neo_3xd"> <img align="left" src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" width="150" alt="neo_3xd" /></a></p><br><br>
+ <p><a href="https://www.buymeacoffee.com/0xneobyte"> <img align="left" src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" width="150" alt="neo_3xd" /></a></p><br><br>
 
 
 ---
 
 <div align="center">
 
-**Made with ❤️ by [Neo](https://github.com/tharushkadinujaya05)**
+**Made with ❤️ by [Neo](https://github.com/0xneobyte)**
 
 </div>
