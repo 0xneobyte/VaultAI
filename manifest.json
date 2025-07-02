@@ -3,7 +3,7 @@
 	"name": "ObsiAI",
 	"version": "1.0.2",
 	"minAppVersion": "0.15.0",
-	"description": "Transform your note-taking with an intelligent AI assistant powered by Google's Gemini AI. Features a sleek floating chat interface for seamless writing assistance, content generation, and smart note enhancement directly within Obsidian.",
+	"description": "Transform your note-taking with an intelligent AI assistant powered by Google's Gemini AI. Features a sleek floating chat interface for seamless writing assistance, content generation, and smart note enhancement.",
 	"author": "Tharushka Dinujaya",
 	"authorUrl": "https://github.com/0xneobyte",
 	"isDesktopOnly": false,
