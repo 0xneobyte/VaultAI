@@ -79,7 +79,8 @@ export default class GeminiChatbotPlugin extends Plugin {
 			this.app.workspace.on("active-leaf-change", async () => {
 				if (
 					this.chatContainer &&
-					this.chatContainer.style.display !== "none"
+					!this.chatContainer.hasClass("initially-hidden") &&
+					!this.chatContainer.hasClass("gemini-hidden")
 				) {
 					const activeFile = this.app.workspace.getActiveFile();
 					if (activeFile) {
@@ -416,11 +417,8 @@ export default class GeminiChatbotPlugin extends Plugin {
 	private addChatContainer() {
 		this.chatContainer = document.createElement("div");
 		this.chatContainer.addClass("gemini-chat-container");
-		this.chatContainer.style.display = "none";
-
-		// Set initial default size
-		this.chatContainer.style.width = "380px";
-		this.chatContainer.style.height = "590px";
+		this.chatContainer.addClass("initially-hidden");
+		this.chatContainer.addClass("default-size");
 
 		// Create header
 		const header = this.createChatHeader();
@@ -843,10 +841,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 		const moreButton = this.chatContainer.querySelector(".more-button");
 		moreButton?.addEventListener("click", async () => {
 			// Check if window is already at default size
-			if (
-				this.chatContainer.style.width === "380px" &&
-				this.chatContainer.style.height === "590px"
-			) {
+			if (this.chatContainer.classList.contains("default-size")) {
 				return;
 			}
 
@@ -854,8 +849,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 			this.chatContainer.classList.add("resetting");
 
 			// Reset size with smooth transition
-			this.chatContainer.style.width = "380px";
-			this.chatContainer.style.height = "590px";
+			this.chatContainer.classList.add("default-size");
 
 			// Remove resetting class after animation
 			setTimeout(() => {
@@ -892,14 +886,16 @@ export default class GeminiChatbotPlugin extends Plugin {
 	}
 
 	private async toggleChatContainer() {
-		const isVisible = this.chatContainer.style.display !== "none";
+		const isVisible =
+			!this.chatContainer.classList.contains("initially-hidden");
 
 		if (isVisible) {
 			// Add closing animation
 			this.chatContainer.classList.add("closing");
 			// Wait for animation to complete before hiding
 			await new Promise((resolve) => setTimeout(resolve, 300));
-			this.chatContainer.style.display = "none";
+			this.chatContainer.addClass("initially-hidden");
+			this.chatContainer.removeClass("visible");
 			this.chatContainer.classList.remove("closing");
 		} else {
 			// Reset the chat container content
@@ -934,7 +930,8 @@ export default class GeminiChatbotPlugin extends Plugin {
 				this.addActionButtonListeners();
 			}
 
-			this.chatContainer.style.display = "flex";
+			this.chatContainer.removeClass("initially-hidden");
+			this.chatContainer.addClass("visible");
 			this.currentSession = this.createNewSession();
 			this.showMainChatView();
 			this.toggleSuggestedActions(true);
@@ -1018,7 +1015,13 @@ export default class GeminiChatbotPlugin extends Plugin {
 			".suggested-actions"
 		) as HTMLElement;
 		if (suggestedActions) {
-			suggestedActions.style.display = show ? "block" : "none";
+			if (show) {
+				suggestedActions.removeClass("gemini-hidden");
+				suggestedActions.addClass("gemini-visible");
+			} else {
+				suggestedActions.removeClass("gemini-visible");
+				suggestedActions.addClass("gemini-hidden");
+			}
 		}
 	}
 
@@ -1029,9 +1032,11 @@ export default class GeminiChatbotPlugin extends Plugin {
 		) as HTMLElement;
 		if (headerEl && activeFile) {
 			headerEl.textContent = activeFile.basename;
-			headerEl.style.display = "block";
+			headerEl.removeClass("gemini-hidden");
+			headerEl.addClass("gemini-visible");
 		} else if (headerEl) {
-			headerEl.style.display = "none";
+			headerEl.removeClass("gemini-visible");
+			headerEl.addClass("gemini-hidden");
 		}
 	}
 
@@ -1210,7 +1215,11 @@ export default class GeminiChatbotPlugin extends Plugin {
 		];
 		elementsToHide.forEach((selector) => {
 			const el = this.chatContainer.querySelector(selector);
-			if (el) (el as HTMLElement).style.display = "none";
+			if (el) {
+				(el as HTMLElement).removeClass("gemini-visible");
+				(el as HTMLElement).removeClass("gemini-visible-flex");
+				(el as HTMLElement).addClass("gemini-hidden");
+			}
 		});
 
 		// Remove existing history view if any
@@ -1484,9 +1493,14 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 		elementsToShow.forEach((selector) => {
 			const el = this.chatContainer.querySelector(selector);
-			if (el)
-				(el as HTMLElement).style.display =
-					selector === ".gemini-chat-messages" ? "flex" : "block";
+			if (el) {
+				el.removeClass("gemini-hidden");
+				if (selector === ".gemini-chat-messages") {
+					el.addClass("gemini-visible-flex");
+				} else {
+					el.addClass("gemini-visible");
+				}
+			}
 		});
 
 		if (this.messagesContainer) {
@@ -1744,9 +1758,16 @@ export default class GeminiChatbotPlugin extends Plugin {
 				800 // Maximum height: 800px
 			);
 
-			// Update container dimensions
-			this.chatContainer.style.width = `${newWidth}px`;
-			this.chatContainer.style.height = `${newHeight}px`;
+			// Update container dimensions using CSS custom properties
+			this.chatContainer.addClass("dynamic-size");
+			this.chatContainer.style.setProperty(
+				"--dynamic-width",
+				`${newWidth}px`
+			);
+			this.chatContainer.style.setProperty(
+				"--dynamic-height",
+				`${newHeight}px`
+			);
 
 			// Maintain position relative to bottom-right corner
 			this.chatContainer.style.bottom = `${startBottom}px`;
