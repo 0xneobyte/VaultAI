@@ -1,6 +1,6 @@
 {
-	"name": "obsiai",
-	"version": "1.0.2",
+	"name": "vault-ai",
+	"version": "1.0.3",
 	"description": "Transform your note-taking with an intelligent AI assistant powered by Google's Gemini AI.",
 	"main": "main.js",
 	"scripts": {

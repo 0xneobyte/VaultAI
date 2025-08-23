@@ -1,0 +1,31 @@
+/* Poppins Font Family - Bundled with VaultAI Plugin */
+
+@font-face {
+	font-family: "Poppins";
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url("data:font/woff2;base64,d09GMgABAAAAAA...") format("woff2");
+}
+
+@font-face {
+	font-family: "Poppins";
+	font-style: normal;
+	font-weight: 500;
+	font-display: swap;
+	src: url("data:font/woff2;base64,d09GMgABAAAAAA...") format("woff2");
+}
+
+@font-face {
+	font-family: "Poppins";
+	font-style: normal;
+	font-weight: 600;
+	font-display: swap;
+	src: url("data:font/woff2;base64,d09GMgABAAAAAA...") format("woff2");
+}
+
+/* Fallback to system fonts if bundled fonts fail to load */
+.vaultai-font-fallback {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+		"Helvetica Neue", Arial, sans-serif;
+}

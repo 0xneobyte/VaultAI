@@ -13,8 +13,8 @@
  * 6. Utility classes
  */
 
-/* Core font import */
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap");
+/* Core font import - bundled fonts for VaultAI */
+@import url("./src/fonts/fonts.css");
 
 /* Base container styling with theme awareness */
 .gemini-chat-container {
@@ -170,28 +170,28 @@
 	margin-bottom: 24px;
 }
 
-/* Suggested Actions */
-.suggested-actions {
+/* VaultAI Suggested Actions */
+.vaultai-suggested-actions {
 	padding: 0 24px;
 	background: var(--chat-background);
 	transition: opacity 0.3s ease-out, transform 0.3s ease-out;
 }
 
-.suggested-actions.hidden {
+.vaultai-suggested-actions.hidden {
 	opacity: 0;
 	transform: translateY(-20px);
 	pointer-events: none;
 	position: absolute;
 }
 
-.suggested-actions h3 {
+.vaultai-suggested-actions h3 {
 	font-size: 0.875em;
 	color: var(--text-muted);
 	margin-bottom: 12px;
 	font-weight: 500;
 }
 
-.action-button {
+.vaultai-action-button {
 	display: flex;
 	align-items: center;
 	gap: 8px;
@@ -206,11 +206,11 @@
 	color: var(--text-normal);
 }
 
-.action-button:hover {
+.vaultai-action-button:hover {
 	background: var(--chat-hover);
 }
 
-.action-icon {
+.vaultai-action-icon {
 	width: 20px;
 	height: 20px;
 	fill: currentColor;
@@ -488,7 +488,7 @@
 	min-width: 180px;
 }
 
-.menu-item {
+.vaultai-menu-item {
 	display: flex;
 	align-items: center;
 	gap: 8px;
@@ -497,11 +497,11 @@
 	color: var(--text-normal);
 }
 
-.menu-item:hover {
+.vaultai-menu-item:hover {
 	background: var(--background-modifier-hover);
 }
 
-.menu-item svg {
+.vaultai-menu-item svg {
 	opacity: 0.7;
 }
 
@@ -705,17 +705,17 @@
 	margin-top: 4px;
 }
 
-.suggestion-item {
+.vaultai-suggestion-item {
 	padding: 8px 12px;
 	cursor: pointer;
 	border-radius: 4px;
 }
 
-.suggestion-item:hover {
+.vaultai-suggestion-item:hover {
 	background-color: var(--background-modifier-hover);
 }
 
-.suggestion-item.is-selected {
+.vaultai-suggestion-item.is-selected {
 	background-color: var(--background-modifier-hover);
 }
 
@@ -1322,11 +1322,11 @@
 }
 
 /* Suggested actions visibility */
-.suggested-actions.gemini-hidden {
+.vaultai-suggested-actions.gemini-hidden {
 	display: none !important;
 }
 
-.suggested-actions.gemini-visible {
+.vaultai-suggested-actions.gemini-visible {
 	display: block !important;
 }
 

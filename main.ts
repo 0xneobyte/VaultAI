@@ -53,13 +53,6 @@ export default class GeminiChatbotPlugin extends Plugin {
 	private readonly MAX_CONTEXT_LENGTH = 30000; // Prevent token limit issues
 
 	async onload() {
-		// Add Font Awesome CSS
-		const fontAwesomeLink = document.createElement("link");
-		fontAwesomeLink.rel = "stylesheet";
-		fontAwesomeLink.href =
-			"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css";
-		document.head.appendChild(fontAwesomeLink);
-
 		await this.loadSettings();
 		if (this.settings.apiKey) {
 			this.initializeGeminiService();
@@ -264,8 +257,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 		// Hide bot info and suggested actions after first message
 		if (this.currentSession?.messages.length === 0) {
 			const botInfo = this.chatContainer?.querySelector(".bot-info");
-			const suggestedActions =
-				this.chatContainer?.querySelector(".suggested-actions");
+			const suggestedActions = this.chatContainer?.querySelector(
+				".vaultai-suggested-actions"
+			);
 
 			botInfo?.addClass("hidden");
 			suggestedActions?.addClass("hidden");
@@ -299,13 +293,8 @@ export default class GeminiChatbotPlugin extends Plugin {
 				new Notice("Response copied to new note!");
 			});
 
-			// Directly render markdown
-			await MarkdownRenderer.renderMarkdown(
-				message.content,
-				messageEl,
-				"",
-				this
-			);
+			// Directly render markdown using the new API
+			await MarkdownRenderer.render(message.content, messageEl, "", this);
 		} else {
 			// For user messages, just show the visible part
 			const visibleContent = this.stripContextFromMessage(
@@ -325,7 +314,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 	// Add new method for typing animation
 	private async typeMessage(text: string, container: HTMLElement) {
 		// First render the markdown but keep it hidden
-		await MarkdownRenderer.renderMarkdown(text, container, "", this);
+		await MarkdownRenderer.render(text, container, "", this);
 		const elements = Array.from(container.children);
 		container.empty();
 
@@ -697,7 +686,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 	private createSuggestedActions(): HTMLElement {
 		const suggestedActions = document.createElement("div");
-		suggestedActions.addClass("suggested-actions");
+		suggestedActions.addClass("vaultai-suggested-actions");
 
 		// Title
 		const title = document.createElement("h3");
@@ -714,10 +703,10 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 		actions.forEach((action) => {
 			const button = document.createElement("div");
-			button.addClass("action-button");
+			button.addClass("vaultai-action-button");
 
 			const icon = document.createElement("span");
-			icon.addClass("action-icon");
+			icon.addClass("vaultai-action-icon");
 			icon.textContent = action.icon;
 
 			button.appendChild(icon);
@@ -801,8 +790,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 		});
 
 		// Simplify action buttons handlers
-		const actionButtons =
-			this.chatContainer.querySelectorAll(".action-button");
+		const actionButtons = this.chatContainer.querySelectorAll(
+			".vaultai-action-button"
+		);
 		actionButtons.forEach((button) => {
 			button.addEventListener("click", () => {
 				if (!this.inputField) return;
@@ -906,8 +896,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 			// Recreate bot-info and suggested-actions if they don't exist
 			const existingBotInfo =
 				this.chatContainer.querySelector(".bot-info");
-			const existingSuggestedActions =
-				this.chatContainer.querySelector(".suggested-actions");
+			const existingSuggestedActions = this.chatContainer.querySelector(
+				".vaultai-suggested-actions"
+			);
 
 			if (!existingBotInfo) {
 				const botInfo = this.createBotInfo();
@@ -920,7 +911,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 			if (!existingSuggestedActions) {
 				const suggestedActions = this.createSuggestedActions();
-				// Insert suggested-actions before the chat input container
+				// Insert vaultai-suggested-actions before the chat input container
 				const inputContainer = this.chatContainer.querySelector(
 					".chat-input-container"
 				);
@@ -949,8 +940,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 	// Add this new method to handle action button listeners
 	private addActionButtonListeners() {
-		const actionButtons =
-			this.chatContainer.querySelectorAll(".action-button");
+		const actionButtons = this.chatContainer.querySelectorAll(
+			".vaultai-action-button"
+		);
 		actionButtons.forEach((button) => {
 			button.addEventListener("click", () => {
 				if (!this.inputField) return;
@@ -989,14 +981,6 @@ export default class GeminiChatbotPlugin extends Plugin {
 	}
 
 	onunload() {
-		// Remove Font Awesome CSS
-		const fontAwesomeLink = document.querySelector(
-			'link[href*="font-awesome"]'
-		);
-		if (fontAwesomeLink) {
-			fontAwesomeLink.remove();
-		}
-
 		this.chatIcon?.remove();
 		this.chatContainer?.remove();
 	}
@@ -1209,7 +1193,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 		// Hide existing elements
 		const elementsToHide = [
 			".bot-info",
-			".suggested-actions",
+			".vaultai-suggested-actions",
 			".chat-input-container",
 			".gemini-chat-messages",
 		];
@@ -1513,8 +1497,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 				if (this.currentSession.messages.length > 0) {
 					const botInfo =
 						this.chatContainer.querySelector(".bot-info");
-					const suggestedActions =
-						this.chatContainer.querySelector(".suggested-actions");
+					const suggestedActions = this.chatContainer.querySelector(
+						".vaultai-suggested-actions"
+					);
 
 					if (botInfo) {
 						botInfo.addClass("hidden");
@@ -1558,7 +1543,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 						});
 
 						// Render markdown for bot messages
-						await MarkdownRenderer.renderMarkdown(
+						await MarkdownRenderer.render(
 							message.content,
 							messageEl,
 							"",
@@ -1656,7 +1641,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 		// Create content container with proper formatting
 		const contentDiv = container.createDiv("response-content");
-		await MarkdownRenderer.renderMarkdown(content, contentDiv, "", this);
+		await MarkdownRenderer.render(content, contentDiv, "", this);
 	}
 
 	// Add method to generate creative titles
@@ -1795,7 +1780,7 @@ class GeminiChatbotSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName("Gemini API Key")
+			.setName("Gemini API key")
 			.setDesc("Enter your Gemini API key (stored securely)")
 			.addText((text) => {
 				text.inputEl.type = "password";
