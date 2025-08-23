@@ -1,11 +1,17 @@
 # Changelog
 
-All notable changes to ObsiAI will be documented in this file.
+All notable changes to VaultAI will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.2] - 2024-12-19
+## [1.0.3] - 2025-08-23
+
+### 🏷️ Naming & Branding
+
+-   **Renamed plugin to VaultAI** - Changed from ObsiAI to avoid conflicts with Obsidian naming conventions
+-   **Updated plugin ID** - Changed from "obsi-ai" to "vault-ai" for better compatibility
+-   **Improved branding** - All references now use the new VaultAI name
 
 ### 🔒 Security
 
@@ -20,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Updated bot avatar and UI components to use `createSvg()` and DOM methods
 -   Converted all dynamic HTML generation to use `createEl()`, `createDiv()`, and `appendChild()`
 -   Improved message rendering to use `empty()` instead of `innerHTML = ""`
+-   **Updated deprecated MarkdownRenderer usage** - Replaced `renderMarkdown` with `render` method
+-   **Removed external font dependencies** - Bundled Poppins font with the plugin
+-   **Enhanced CSS class specificity** - Updated class names to avoid conflicts with other plugins
 
 ### 📝 Code Quality
 
@@ -38,6 +47,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   All existing settings and chat history preserved
 
 ---
+
+## [1.0.2] - Previous Release
+
+-   Security improvements and code refactoring
 
 ## [1.0.1] - Previous Release
 
