@@ -2,9 +2,9 @@
 
 <div align="left">
 
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/0xneobyte/vaultai)
-![GitHub all releases](https://img.shields.io/github/downloads/tharushkadinujaya05/vaultai/total)
-![GitHub](https://img.shields.io/github/license/0xneobyte/vaultai)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/0xneobyte/VaultAI)
+![GitHub all releases](https://img.shields.io/github/downloads/tharushkadinujaya05/VaultAI/total)
+![GitHub](https://img.shields.io/github/license/0xneobyte/VaultAI)
 
 A powerful AI assistant plugin for Obsidian (https://obsidian.md) inspired by Notion's AI chatbot. This plugin provides an interactive chatbot powered by Google's Gemini AI, adding a floating chat interface to your Obsidian workspace. It allows you to interact with AI for note summarization, brainstorming, translations, and more.
 
