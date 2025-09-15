@@ -293,8 +293,8 @@ export default class GeminiChatbotPlugin extends Plugin {
 				new Notice("Response copied to new note!");
 			});
 
-			// Directly render markdown using the new API
-			await MarkdownRenderer.render(message.content, messageEl, "", this);
+			// Directly render markdown using the correct API
+			await MarkdownRenderer.render(this.app, message.content, messageEl, "", this);
 		} else {
 			// For user messages, just show the visible part
 			const visibleContent = this.stripContextFromMessage(
@@ -314,7 +314,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 	// Add new method for typing animation
 	private async typeMessage(text: string, container: HTMLElement) {
 		// First render the markdown but keep it hidden
-		await MarkdownRenderer.render(text, container, "", this);
+		await MarkdownRenderer.render(this.app, text, container, "", this);
 		const elements = Array.from(container.children);
 		container.empty();
 
@@ -829,22 +829,8 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 		// Add more options menu
 		const moreButton = this.chatContainer.querySelector(".more-button");
-		moreButton?.addEventListener("click", async () => {
-			// Check if window is already at default size
-			if (this.chatContainer.classList.contains("default-size")) {
-				return;
-			}
-
-			// Add resetting class for animation
-			this.chatContainer.classList.add("resetting");
-
-			// Reset size with smooth transition
-			this.chatContainer.classList.add("default-size");
-
-			// Remove resetting class after animation
-			setTimeout(() => {
-				this.chatContainer.classList.remove("resetting");
-			}, 400); // Match the new animation duration
+		moreButton?.addEventListener("click", async (event) => {
+			this.showMoreOptionsMenu(event as MouseEvent);
 		});
 
 		// Add @ button handler
@@ -980,6 +966,33 @@ export default class GeminiChatbotPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
+	// Helper methods for DOM manipulation (to handle obsidian-specific methods)
+	private addClass(element: HTMLElement, className: string) {
+		if (element && typeof element.addClass === 'function') {
+			(element as any).addClass(className);
+		} else {
+			element?.classList.add(className);
+		}
+	}
+
+	private removeClass(element: HTMLElement, className: string) {
+		if (element && typeof element.removeClass === 'function') {
+			(element as any).removeClass(className);
+		} else {
+			element?.classList.remove(className);
+		}
+	}
+
+	private empty(element: HTMLElement) {
+		if (element && typeof element.empty === 'function') {
+			(element as any).empty();
+		} else {
+			if (element) {
+				element.innerHTML = '';
+			}
+		}
+	}
+
 	onunload() {
 		this.chatIcon?.remove();
 		this.chatContainer?.remove();
@@ -1022,6 +1035,120 @@ export default class GeminiChatbotPlugin extends Plugin {
 			headerEl.removeClass("gemini-visible");
 			headerEl.addClass("gemini-hidden");
 		}
+	}
+
+	// Add method to handle more options menu
+	private showMoreOptionsMenu(event: MouseEvent) {
+		// Remove existing menu if present
+		const existingMenu = document.querySelector('.more-options-menu');
+		if (existingMenu) {
+			existingMenu.remove();
+			return;
+		}
+
+		// Create menu container
+		const menu = document.createElement('div');
+		menu.className = 'more-options-menu';
+
+		// Position menu relative to button
+		const buttonRect = (event.target as HTMLElement).getBoundingClientRect();
+		menu.style.position = 'fixed';
+		menu.style.top = `${buttonRect.bottom + 5}px`;
+		menu.style.right = `${window.innerWidth - buttonRect.right}px`;
+
+		// Create menu items
+		const menuItems = [
+			{
+				icon: '↙️',
+				text: 'Reset Size',
+				action: () => this.resetChatSize()
+			},
+			{
+				icon: '⛶',
+				text: 'Toggle Full Screen',
+				action: () => this.toggleFullPageChat()
+			},
+			{
+				icon: '📐',
+				text: 'Compact View',
+				action: () => this.setCompactSize()
+			},
+			{
+				icon: '🔄',
+				text: 'New Chat',
+				action: () => this.startNewChat()
+			}
+		];
+
+		menuItems.forEach(item => {
+			const menuItem = document.createElement('div');
+			menuItem.className = 'vaultai-menu-item';
+			
+			const icon = document.createElement('span');
+			icon.textContent = item.icon;
+			
+			const text = document.createElement('span');
+			text.textContent = item.text;
+			
+			menuItem.appendChild(icon);
+			menuItem.appendChild(text);
+			
+			menuItem.addEventListener('click', () => {
+				item.action();
+				menu.remove();
+			});
+			
+			menu.appendChild(menuItem);
+		});
+
+		document.body.appendChild(menu);
+
+		// Close menu when clicking outside
+		const closeMenu = (e: MouseEvent) => {
+			if (!menu.contains(e.target as Node)) {
+				menu.remove();
+				document.removeEventListener('click', closeMenu);
+			}
+		};
+		
+		// Delay adding the event listener to prevent immediate closure
+		setTimeout(() => {
+			document.addEventListener('click', closeMenu);
+		}, 100);
+	}
+
+	// Add method to reset chat size
+	private resetChatSize() {
+		// Add resetting class for animation
+		this.chatContainer.classList.add("resetting");
+		this.chatContainer.classList.remove("dynamic-size");
+		this.chatContainer.classList.add("default-size");
+
+		// Clear custom size properties
+		this.chatContainer.style.removeProperty("--dynamic-width");
+		this.chatContainer.style.removeProperty("--dynamic-height");
+
+		// Remove resetting class after animation
+		setTimeout(() => {
+			this.chatContainer.classList.remove("resetting");
+		}, 400);
+	}
+
+	// Add method to set compact size
+	private setCompactSize() {
+		this.chatContainer.classList.remove("default-size");
+		this.chatContainer.classList.add("dynamic-size");
+		this.chatContainer.style.setProperty("--dynamic-width", "320px");
+		this.chatContainer.style.setProperty("--dynamic-height", "480px");
+	}
+
+	// Add method to start new chat
+	private startNewChat() {
+		if (this.messagesContainer) {
+			this.messagesContainer.empty();
+		}
+		this.currentSession = this.createNewSession();
+		this.showMainChatView();
 	}
 
 	// Add this method to handle full page toggle
@@ -1375,6 +1502,26 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 	// Add method to attach event listeners to history items
 	private attachHistoryItemListeners(historyView: HTMLElement) {
+		// Back button
+		const backButton = historyView.querySelector(".back-button");
+		backButton?.addEventListener("click", () => {
+			this.goBackFromHistory();
+		});
+
+		// New chat button
+		const newChatButton = historyView.querySelector(".new-chat-button");
+		newChatButton?.addEventListener("click", () => {
+			this.startNewChat();
+			this.goBackFromHistory();
+		});
+
+		// Search functionality
+		const searchInput = historyView.querySelector("input") as HTMLInputElement;
+		searchInput?.addEventListener("input", (e) => {
+			const query = (e.target as HTMLInputElement).value;
+			this.filterChatHistory(query);
+		});
+
 		// Delete buttons
 		const deleteButtons = historyView.querySelectorAll(".delete-chat");
 		deleteButtons.forEach((btn) => {
@@ -1397,11 +1544,24 @@ export default class GeminiChatbotPlugin extends Plugin {
 				);
 				if (session) {
 					this.currentSession = { ...session };
-					this.showMainChatView();
-					historyView.remove();
+					this.goBackFromHistory();
 				}
 			});
 		});
+	}
+
+	// Add method to go back from history view
+	private goBackFromHistory() {
+		const historyView = this.chatContainer.querySelector(".chat-history-view");
+		if (historyView) {
+			historyView.classList.add("closing");
+			setTimeout(() => {
+				historyView.remove();
+				this.showMainChatView();
+			}, 300);
+		} else {
+			this.showMainChatView();
+		}
 	}
 
 	// Add method to render chat history sections
@@ -1468,7 +1628,13 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 	// Update showMainChatView method
 	private async showMainChatView() {
-		// Show all main chat elements
+		// Remove history view if present
+		const historyView = this.chatContainer.querySelector(".chat-history-view");
+		if (historyView) {
+			historyView.remove();
+		}
+
+		// Show all main chat elements with proper display classes
 		const elementsToShow = [
 			".bot-info",
 			".chat-input-container",
@@ -1478,38 +1644,35 @@ export default class GeminiChatbotPlugin extends Plugin {
 		elementsToShow.forEach((selector) => {
 			const el = this.chatContainer.querySelector(selector);
 			if (el) {
-				el.removeClass("gemini-hidden");
+				el.classList.remove("gemini-hidden");
 				if (selector === ".gemini-chat-messages") {
-					el.addClass("gemini-visible-flex");
+					el.classList.add("gemini-visible-flex");
 				} else {
-					el.addClass("gemini-visible");
+					el.classList.add("gemini-visible");
 				}
 			}
 		});
 
 		if (this.messagesContainer) {
 			// Clear existing messages before adding new ones
-			this.messagesContainer.empty();
+			this.messagesContainer.innerHTML = "";
 
 			// Only show messages if we have a current session
-			if (this.currentSession) {
+			if (this.currentSession && this.currentSession.messages.length > 0) {
 				// Hide bot info and suggested actions if there are messages
-				if (this.currentSession.messages.length > 0) {
-					const botInfo =
-						this.chatContainer.querySelector(".bot-info");
-					const suggestedActions = this.chatContainer.querySelector(
-						".vaultai-suggested-actions"
-					);
+				const botInfo = this.chatContainer.querySelector(".bot-info");
+				const suggestedActions = this.chatContainer.querySelector(
+					".vaultai-suggested-actions"
+				);
 
-					if (botInfo) {
-						botInfo.addClass("hidden");
-						setTimeout(() => botInfo.remove(), 300);
-					}
+				if (botInfo) {
+					botInfo.classList.add("hidden");
+					setTimeout(() => botInfo.remove(), 300);
+				}
 
-					if (suggestedActions) {
-						suggestedActions.addClass("hidden");
-						setTimeout(() => suggestedActions.remove(), 300);
-					}
+				if (suggestedActions) {
+					suggestedActions.classList.add("hidden");
+					setTimeout(() => suggestedActions.remove(), 300);
 				}
 
 				// Create a new array with sorted messages
@@ -1520,30 +1683,35 @@ export default class GeminiChatbotPlugin extends Plugin {
 				// Display messages in chronological order
 				for (const message of sortedMessages) {
 					const messageEl = document.createElement("div");
-					messageEl.addClass(`gemini-message-${message.role}`);
+					messageEl.className = `gemini-message-${message.role}`;
 
 					if (message.role === "bot") {
 						// Add copy button for bot messages
-						const copyButton = messageEl.createEl("button", {
-							text: "Copy to new note",
-							cls: "copy-response-button",
-						});
+						const copyButton = document.createElement("button");
+						copyButton.textContent = "Copy to new note";
+						copyButton.className = "copy-response-button";
 
 						copyButton.addEventListener("click", async () => {
-							const title = this.generateNoteTitle(
-								message.content
-							);
-							const file = await this.app.vault.create(
-								`${title}.md`,
-								message.content
-							);
-							const leaf = this.app.workspace.getLeaf(false);
-							await leaf.openFile(file);
-							new Notice("Response copied to new note!");
+							try {
+								const title = this.generateNoteTitle(message.content);
+								const file = await this.app.vault.create(
+									`${title}.md`,
+									message.content
+								);
+								const leaf = this.app.workspace.getLeaf(false);
+								await leaf.openFile(file);
+								new Notice("Response copied to new note!");
+							} catch (error) {
+								console.error("Failed to create note:", error);
+								new Notice("Failed to create note");
+							}
 						});
+
+						messageEl.appendChild(copyButton);
 
 						// Render markdown for bot messages
 						await MarkdownRenderer.render(
+							this.app,
 							message.content,
 							messageEl,
 							"",
@@ -1560,13 +1728,43 @@ export default class GeminiChatbotPlugin extends Plugin {
 					this.messagesContainer.appendChild(messageEl);
 				}
 
-				this.messagesContainer.scrollTop =
-					this.messagesContainer.scrollHeight;
+				this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
 				this.toggleSuggestedActions(false);
 			} else {
 				// Show suggested actions for new chat
+				this.recreateBotInfoAndSuggestions();
 				this.toggleSuggestedActions(true);
 			}
+		}
+	}
+
+	// Add method to recreate bot info and suggestions when needed
+	private recreateBotInfoAndSuggestions() {
+		// Recreate bot-info and suggested-actions if they don't exist
+		const existingBotInfo = this.chatContainer.querySelector(".bot-info");
+		const existingSuggestedActions = this.chatContainer.querySelector(
+			".vaultai-suggested-actions"
+		);
+
+		if (!existingBotInfo) {
+			const botInfo = this.createBotInfo();
+			// Insert bot-info after the header
+			const header = this.chatContainer.querySelector(
+				".gemini-chat-header"
+			);
+			header?.after(botInfo);
+		}
+
+		if (!existingSuggestedActions) {
+			const suggestedActions = this.createSuggestedActions();
+			// Insert vaultai-suggested-actions before the chat input container
+			const inputContainer = this.chatContainer.querySelector(
+				".chat-input-container"
+			);
+			inputContainer?.before(suggestedActions);
+
+			// Reattach event listeners for action buttons
+			this.addActionButtonListeners();
 		}
 	}
 
@@ -1641,7 +1839,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 		// Create content container with proper formatting
 		const contentDiv = container.createDiv("response-content");
-		await MarkdownRenderer.render(content, contentDiv, "", this);
+		await MarkdownRenderer.render(this.app, content, contentDiv, "", this);
 	}
 
 	// Add method to generate creative titles
@@ -1718,12 +1916,16 @@ export default class GeminiChatbotPlugin extends Plugin {
 			startBottom = window.innerHeight - rect.bottom;
 			startRight = window.innerWidth - rect.right;
 
+			// Add resizing class for visual feedback
+			this.chatContainer.addClass("is-resizing");
+
 			// Add event listeners
 			document.addEventListener("mousemove", handleMouseMove);
 			document.addEventListener("mouseup", stopResize);
 
 			// Prevent text selection while resizing
 			e.preventDefault();
+			document.body.style.userSelect = "none";
 		});
 
 		const handleMouseMove = (e: MouseEvent) => {
@@ -1734,16 +1936,17 @@ export default class GeminiChatbotPlugin extends Plugin {
 			const deltaY = startY - e.clientY;
 
 			const newWidth = Math.min(
-				Math.max(startWidth + deltaX, 380), // Minimum width: 380px
-				800 // Maximum width: 800px
+				Math.max(startWidth + deltaX, 320), // Minimum width: 320px
+				Math.min(window.innerWidth - 40, 900) // Maximum width: 900px or window width - 40px
 			);
 
 			const newHeight = Math.min(
-				Math.max(startHeight + deltaY, 500), // Minimum height: 500px
-				800 // Maximum height: 800px
+				Math.max(startHeight + deltaY, 400), // Minimum height: 400px
+				Math.min(window.innerHeight - 40, 900) // Maximum height: 900px or window height - 40px
 			);
 
 			// Update container dimensions using CSS custom properties
+			this.chatContainer.removeClass("default-size");
 			this.chatContainer.addClass("dynamic-size");
 			this.chatContainer.style.setProperty(
 				"--dynamic-width",
@@ -1763,6 +1966,10 @@ export default class GeminiChatbotPlugin extends Plugin {
 			isResizing = false;
 			document.removeEventListener("mousemove", handleMouseMove);
 			document.removeEventListener("mouseup", stopResize);
+			
+			// Remove resizing class and restore user selection
+			this.chatContainer.removeClass("is-resizing");
+			document.body.style.userSelect = "";
 		};
 	}
 }
