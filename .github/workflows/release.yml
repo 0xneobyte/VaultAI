@@ -1,44 +1,47 @@
 name: Build obsidian plugin
 
 on:
-  push:
-    # Sequence of patterns matched against refs/tags
-    tags:
-      - "*" # Push events to matching any tag format, i.e. 1.0, 20.15.10
+    push:
+        # Sequence of patterns matched against refs/tags
+        tags:
+            - "*" # Push events to matching any tag format, i.e. 1.0, 20.15.10
 
 # Add permissions for GitHub Actions
 permissions:
-  contents: write
+    contents: write
 
 env:
-  PLUGIN_NAME: vault-ai # Change this to the name of your plugin-id folder
+    PLUGIN_NAME: vault-ai # Change this to the name of your plugin-id folder
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+    build:
+        runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "18.x" # Updated to Node 18
-      - name: Build
-        id: build
-        run: |
-          npm ci
-          npm run build --if-present
-          mkdir ${{ env.PLUGIN_NAME }}
-          cp main.js manifest.json styles.css ${{ env.PLUGIN_NAME }}
-          zip -r ${{ env.PLUGIN_NAME }}.zip ${{ env.PLUGIN_NAME }}
-          ls
-          echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-      - name: Create Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          tag="${GITHUB_REF#refs/tags/}"
-          gh release create "$tag" 
-            --title="$tag" 
-            --generate-notes 
-            main.js manifest.json styles.css "${{ env.PLUGIN_NAME }}.zip"
+        steps:
+            - uses: actions/checkout@v3
+            - name: Use Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: "18.x" # Updated to Node 18
+            - name: Build
+              id: build
+              run: |
+                  npm ci
+                  npm run build --if-present
+                  mkdir ${{ env.PLUGIN_NAME }}
+                  cp main.js manifest.json styles.css ${{ env.PLUGIN_NAME }}
+                  zip -r ${{ env.PLUGIN_NAME }}.zip ${{ env.PLUGIN_NAME }}
+                  ls
+                  echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+            - name: Create Release
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  tag="${GITHUB_REF#refs/tags/}"
+                  gh release create "$tag" --title="$tag" --generate-notes --draft=false
+            - name: Upload Release Assets
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  tag="${GITHUB_REF#refs/tags/}"
+                  gh release upload "$tag" main.js manifest.json styles.css "${{ env.PLUGIN_NAME }}.zip"
