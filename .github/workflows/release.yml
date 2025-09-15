@@ -7,25 +7,25 @@ on:
       - "*" # Push events to matching any tag format, i.e. 1.0, 20.15.10
 
 env:
-  PLUGIN_NAME: nldates-obsidian # Change this to the name of your plugin-id folder
+  PLUGIN_NAME: vault-ai # Change this to the name of your plugin-id folder
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Use Node.js
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
-          node-version: "14.x" # You might need to adjust this value to your own version
+          node-version: "18.x" # Updated to Node 18
       - name: Build
         id: build
         run: |
-          yarn
-          yarn run build --if-present
+          npm ci
+          npm run build --if-present
           mkdir ${{ env.PLUGIN_NAME }}
-          cp main.js manifest.json ${{ env.PLUGIN_NAME }}
+          cp main.js manifest.json styles.css ${{ env.PLUGIN_NAME }}
           zip -r ${{ env.PLUGIN_NAME }}.zip ${{ env.PLUGIN_NAME }}
           ls
           echo "::set-output name=tag_name::$(git tag --sort version:refname | tail -n 1)"
@@ -70,13 +70,14 @@ jobs:
           asset_path: ./manifest.json
           asset_name: manifest.json
           asset_content_type: application/json
-    # - name: Upload styles.css
-    #   id: upload-css
-    #   uses: actions/upload-release-asset@v1
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #   with:
-    #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-    #     asset_path: ./styles.css
-    #     asset_name: styles.css
-    #     asset_content_type: text/css
+    # Uncomment this section since VaultAI uses styles.css
+    - name: Upload styles.css
+      id: upload-css
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./styles.css
+        asset_name: styles.css
+        asset_content_type: text/css
