@@ -1,7 +1,7 @@
 {
 	"id": "vault-ai",
 	"name": "VaultAI",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"minAppVersion": "0.15.0",
 	"description": "Transform your note-taking with an intelligent AI assistant powered by Google's Gemini AI. Features a sleek floating chat interface for seamless writing assistance, content generation, and smart note enhancement.",
 	"author": "Tharushka Dinujaya",
