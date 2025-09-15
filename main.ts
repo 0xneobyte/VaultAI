@@ -58,6 +58,24 @@ export default class GeminiChatbotPlugin extends Plugin {
 			this.initializeGeminiService();
 		}
 
+		// Add command palette commands
+		this.addCommand({
+			id: 'open-vaultai-chat',
+			name: 'Open VaultAI Chat',
+			callback: () => {
+				this.openChatFromCommand();
+			}
+		});
+
+		this.addCommand({
+			id: 'toggle-vaultai-chat',
+			name: 'Toggle VaultAI Chat',
+			hotkeys: [{ modifiers: ["Mod", "Shift"], key: "v" }],
+			callback: () => {
+				this.toggleChatContainer();
+			}
+		});
+
 		// Add settings tab
 		this.addSettingTab(new GeminiChatbotSettingTab(this.app, this));
 
@@ -98,6 +116,18 @@ export default class GeminiChatbotPlugin extends Plugin {
 			}
 		} catch (error) {
 			console.error("Failed to initialize Gemini service:", error);
+		}
+	}
+
+	private openChatFromCommand() {
+		// Open chat if it's closed
+		if (this.chatContainer?.classList.contains("initially-hidden")) {
+			this.toggleChatContainer();
+		}
+		
+		// Focus the input field
+		if (this.inputField) {
+			this.inputField.focus();
 		}
 	}
 
@@ -968,24 +998,24 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 	// Helper methods for DOM manipulation (to handle obsidian-specific methods)
 	private addClass(element: HTMLElement, className: string) {
-		if (element && typeof element.addClass === 'function') {
-			(element as any).addClass(className);
+		if (element && 'addClass' in element && typeof element.addClass === 'function') {
+			(element as HTMLElement & { addClass: (className: string) => void }).addClass(className);
 		} else {
 			element?.classList.add(className);
 		}
 	}
 
 	private removeClass(element: HTMLElement, className: string) {
-		if (element && typeof element.removeClass === 'function') {
-			(element as any).removeClass(className);
+		if (element && 'removeClass' in element && typeof element.removeClass === 'function') {
+			(element as HTMLElement & { removeClass: (className: string) => void }).removeClass(className);
 		} else {
 			element?.classList.remove(className);
 		}
 	}
 
 	private empty(element: HTMLElement) {
-		if (element && typeof element.empty === 'function') {
-			(element as any).empty();
+		if (element && 'empty' in element && typeof element.empty === 'function') {
+			(element as HTMLElement & { empty: () => void }).empty();
 		} else {
 			if (element) {
 				element.innerHTML = '';
