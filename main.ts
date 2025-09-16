@@ -1,4 +1,4 @@
-import { App, Notice, Plugin, PluginSettingTab, Setting, MarkdownView } from "obsidian";
+import { App, Notice, Plugin, PluginSettingTab, Setting, MarkdownView, Editor } from "obsidian";
 import { GeminiService } from "./src/services/GeminiService";
 import { LanguageSelectionModal } from "./src/modals/LanguageSelectionModal";
 import { MarkdownRenderer } from "obsidian";
@@ -57,6 +57,12 @@ export default class GeminiChatbotPlugin extends Plugin {
 	private currentSession: ChatSession | null = null;
 	private referencedFiles: Map<string, string> | null = null;
 
+	// Editor integration properties
+	private activeEditor: Editor | null = null;
+	private cursorPosition: { line: number; ch: number } | null = null;
+	private editorContext: { fileName: string; lineContent: string; surroundingLines: string[] } | null = null;
+	private insertMode = false;
+
 	// Rate limiting and context management
 	private lastApiCall = 0;
 	private readonly API_COOLDOWN = 1000; // Prevent rapid-fire API calls
@@ -89,6 +95,39 @@ export default class GeminiChatbotPlugin extends Plugin {
 		// Register custom prompt commands
 		this.registerCustomPromptCommands();
 
+		// Add editor integration commands
+		this.addCommand({
+			id: 'vaultai-generate-at-cursor',
+			name: 'VaultAI: Generate content at cursor',
+			editorCallback: (editor: Editor) => {
+				this.generateAtCursor(editor);
+			}
+		});
+
+		this.addCommand({
+			id: 'vaultai-complete-line',
+			name: 'VaultAI: Complete current line',
+			editorCallback: (editor: Editor) => {
+				this.completeLine(editor);
+			}
+		});
+
+		this.addCommand({
+			id: 'vaultai-explain-selection',
+			name: 'VaultAI: Explain selected text',
+			editorCallback: (editor: Editor) => {
+				this.explainSelection(editor);
+			}
+		});
+
+		this.addCommand({
+			id: 'vaultai-improve-selection',
+			name: 'VaultAI: Improve selected text',
+			editorCallback: (editor: Editor) => {
+				this.improveSelection(editor);
+			}
+		});
+
 		// Add settings tab
 		this.addSettingTab(new GeminiChatbotSettingTab(this.app, this));
 
@@ -117,8 +156,20 @@ export default class GeminiChatbotPlugin extends Plugin {
 						this.updateChatHeader();
 					}
 				}
+				// Update editor context when active file changes
+				this.updateEditorContext();
 			})
 		);
+
+		// Add cursor position tracking
+		this.registerEvent(
+			this.app.workspace.on("editor-change", () => {
+				this.updateEditorContext();
+			})
+		);
+
+		// Initial editor context update
+		this.updateEditorContext();
 	}
 
 	public initializeGeminiService() {
@@ -333,6 +384,12 @@ export default class GeminiChatbotPlugin extends Plugin {
 			context += `\nRelevant content from current note:\n${truncatedContent}\n`;
 		}
 
+		// Add editor context (cursor position and surrounding lines)
+		const editorContext = this.getEditorContextString();
+		if (editorContext) {
+			context += editorContext;
+		}
+
 		// Prepare the final message
 		const finalMessage = context
 			? `${context}\n\nUser question: ${contextMessage}`
@@ -372,6 +429,12 @@ export default class GeminiChatbotPlugin extends Plugin {
 			};
 
 			await this.addMessageToChat(botMessage);
+
+			// If insert mode is on, automatically insert the response at cursor
+			if (this.insertMode && this.activeEditor) {
+				await this.insertAtCursor(response);
+				new Notice("AI response inserted at cursor");
+			}
 
 			// Update chat session
 			if (this.currentSession) {
@@ -939,8 +1002,15 @@ export default class GeminiChatbotPlugin extends Plugin {
 		sendButton.addClass("send-button");
 		sendButton.textContent = "↑";
 
+		// Insert at cursor button
+		const insertButton = document.createElement("button");
+		insertButton.addClass("insert-button");
+		insertButton.textContent = "📍";
+		insertButton.title = "Insert AI response at cursor position";
+
 		actionsContainer.appendChild(promptsButton);
 		actionsContainer.appendChild(mentionButton);
+		actionsContainer.appendChild(insertButton);
 		actionsContainer.appendChild(sendButton);
 
 		inputWrapper.appendChild(textarea);
@@ -958,6 +1028,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 		const sendButton = this.chatContainer.querySelector(".send-button");
 		const promptsButton = this.chatContainer.querySelector(".prompts-button");
+		const insertButton = this.chatContainer.querySelector(".insert-button");
 		const inputField = this.chatContainer.querySelector(
 			".chat-input"
 		) as HTMLTextAreaElement;
@@ -968,6 +1039,10 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 		promptsButton?.addEventListener("click", () => {
 			this.showCustomPromptsDropdown();
+		});
+
+		insertButton?.addEventListener("click", () => {
+			this.toggleInsertMode();
 		});
 
 		sendButton?.addEventListener("click", () => {
@@ -1193,6 +1268,217 @@ export default class GeminiChatbotPlugin extends Plugin {
 				element.innerHTML = '';
 			}
 		}
+	}
+
+	// Editor integration methods
+	private updateEditorContext(): void {
+		const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+		if (!activeView || !activeView.editor) {
+			this.activeEditor = null;
+			this.cursorPosition = null;
+			this.editorContext = null;
+			return;
+		}
+
+		this.activeEditor = activeView.editor;
+		this.cursorPosition = this.activeEditor.getCursor();
+		
+		const fileName = activeView.file?.name || "Untitled";
+		const currentLine = this.cursorPosition.line;
+		const lineContent = this.activeEditor.getLine(currentLine);
+		
+		// Get surrounding lines for context (3 before, 3 after)
+		const surroundingLines: string[] = [];
+		const start = Math.max(0, currentLine - 3);
+		const end = Math.min(this.activeEditor.lineCount() - 1, currentLine + 3);
+		
+		for (let i = start; i <= end; i++) {
+			const line = this.activeEditor.getLine(i);
+			const lineNumber = i + 1; // 1-indexed for display
+			const marker = i === currentLine ? " → " : "   ";
+			surroundingLines.push(`${lineNumber.toString().padStart(3)}${marker}${line}`);
+		}
+
+		this.editorContext = {
+			fileName,
+			lineContent,
+			surroundingLines
+		};
+	}
+
+	private getEditorContextString(): string {
+		if (!this.editorContext || !this.cursorPosition) {
+			return "";
+		}
+
+		const { fileName, lineContent, surroundingLines } = this.editorContext;
+		const currentLineNum = this.cursorPosition.line + 1;
+
+		return `\n\n--- Editor Context ---
+File: ${fileName}
+Current line: ${currentLineNum}
+Current line content: "${lineContent}"
+
+Surrounding context:
+\`\`\`
+${surroundingLines.join('\n')}
+\`\`\`
+--- End Context ---\n`;
+	}
+
+	private async insertAtCursor(content: string): Promise<void> {
+		if (!this.activeEditor || !this.cursorPosition) {
+			new Notice("No active editor found");
+			return;
+		}
+
+		// Insert content at current cursor position
+		this.activeEditor.replaceRange(content, this.cursorPosition);
+		
+		// Update cursor position to end of inserted content
+		const lines = content.split('\n');
+		const newLine = this.cursorPosition.line + lines.length - 1;
+		const newCh = lines.length === 1 
+			? this.cursorPosition.ch + content.length 
+			: lines[lines.length - 1].length;
+		
+		this.activeEditor.setCursor({ line: newLine, ch: newCh });
+	}
+
+	private async replaceSelection(content: string): Promise<void> {
+		if (!this.activeEditor) {
+			new Notice("No active editor found");
+			return;
+		}
+
+		const selection = this.activeEditor.getSelection();
+		if (selection) {
+			this.activeEditor.replaceSelection(content);
+		} else {
+			// If no selection, insert at cursor
+			await this.insertAtCursor(content);
+		}
+	}
+
+	// Editor command methods
+	private async generateAtCursor(editor: Editor): Promise<void> {
+		this.activeEditor = editor;
+		this.updateEditorContext();
+		
+		// Open chat and focus on input with a helpful prompt
+		this.openChatFromCommand();
+		if (this.inputField) {
+			this.inputField.value = "Generate content here: ";
+			this.inputField.focus();
+			// Position cursor at the end
+			setTimeout(() => {
+				if (this.inputField) {
+					this.inputField.setSelectionRange(this.inputField.value.length, this.inputField.value.length);
+				}
+			}, 100);
+		}
+	}
+
+	private async completeLine(editor: Editor): Promise<void> {
+		this.activeEditor = editor;
+		const cursor = editor.getCursor();
+		const currentLine = editor.getLine(cursor.line);
+		
+		if (!currentLine.trim()) {
+			new Notice("Current line is empty");
+			return;
+		}
+
+		// Prepare a completion prompt
+		const prompt = `Complete this line: "${currentLine}"`;
+		
+		this.updateEditorContext();
+		this.openChatFromCommand();
+		
+		if (this.inputField) {
+			this.inputField.value = prompt;
+			// Auto-send the completion request
+			setTimeout(() => {
+				const sendButton = this.chatContainer?.querySelector('.send-button') as HTMLButtonElement;
+				if (sendButton) {
+					sendButton.click();
+				}
+			}, 200);
+		}
+	}
+
+	private async explainSelection(editor: Editor): Promise<void> {
+		this.activeEditor = editor;
+		const selection = editor.getSelection();
+		
+		if (!selection.trim()) {
+			new Notice("Please select some text first");
+			return;
+		}
+
+		const prompt = `Explain this text: "${selection}"`;
+		
+		this.updateEditorContext();
+		this.openChatFromCommand();
+		
+		if (this.inputField) {
+			this.inputField.value = prompt;
+			// Auto-send the explanation request
+			setTimeout(() => {
+				const sendButton = this.chatContainer?.querySelector('.send-button') as HTMLButtonElement;
+				if (sendButton) {
+					sendButton.click();
+				}
+			}, 200);
+		}
+	}
+
+	private async improveSelection(editor: Editor): Promise<void> {
+		this.activeEditor = editor;
+		const selection = editor.getSelection();
+		
+		if (!selection.trim()) {
+			new Notice("Please select some text first");
+			return;
+		}
+
+		const prompt = `Improve this text: "${selection}"`;
+		
+		this.updateEditorContext();
+		this.openChatFromCommand();
+		
+		if (this.inputField) {
+			this.inputField.value = prompt;
+			this.inputField.focus();
+			// Position cursor at the end
+			setTimeout(() => {
+				if (this.inputField) {
+					this.inputField.setSelectionRange(this.inputField.value.length, this.inputField.value.length);
+				}
+			}, 100);
+		}
+	}
+
+	private toggleInsertMode(): void {
+		this.insertMode = !this.insertMode;
+		const insertButton = this.chatContainer?.querySelector(".insert-button") as HTMLElement;
+		
+		if (insertButton) {
+			if (this.insertMode) {
+				insertButton.textContent = "📍✓";
+				insertButton.style.backgroundColor = "var(--interactive-accent)";
+				insertButton.style.color = "var(--text-on-accent)";
+				insertButton.title = "Insert mode ON - AI responses will be inserted at cursor";
+			} else {
+				insertButton.textContent = "📍";
+				insertButton.style.backgroundColor = "";
+				insertButton.style.color = "";
+				insertButton.title = "Insert AI response at cursor position";
+			}
+		}
+		
+		this.updateEditorContext();
+		new Notice(this.insertMode ? "Insert mode ON" : "Insert mode OFF");
 	}
 
 	onunload() {
