@@ -1,8 +1,9 @@
-import { App, Notice, Plugin, PluginSettingTab, Setting } from "obsidian";
+import { App, Notice, Plugin, PluginSettingTab, Setting, MarkdownView } from "obsidian";
 import { GeminiService } from "./src/services/GeminiService";
 import { LanguageSelectionModal } from "./src/modals/LanguageSelectionModal";
 import { MarkdownRenderer } from "obsidian";
 import { FileSelectionModal } from "./src/modals/FileSelectionModal";
+import { CustomPromptModal } from "./src/modals/CustomPromptModal";
 
 // Core interfaces for chat functionality
 interface ChatMessage {
@@ -18,11 +19,19 @@ interface ChatSession {
 	messages: ChatMessage[];
 }
 
+interface CustomPrompt {
+	id: string;
+	name: string;
+	description: string;
+	prompt: string;
+}
+
 interface GeminiChatbotSettings {
 	apiKey: string;
 	floatingPosition: { x: number; y: number };
 	isDocked: boolean;
 	chatSessions: ChatSession[];
+	customPrompts: CustomPrompt[];
 }
 
 // Default plugin settings
@@ -31,6 +40,7 @@ const DEFAULT_SETTINGS: GeminiChatbotSettings = {
 	floatingPosition: { x: 20, y: 20 },
 	isDocked: false,
 	chatSessions: [],
+	customPrompts: [],
 };
 
 export default class GeminiChatbotPlugin extends Plugin {
@@ -75,6 +85,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 				this.toggleChatContainer();
 			}
 		});
+
+		// Register custom prompt commands
+		this.registerCustomPromptCommands();
 
 		// Add settings tab
 		this.addSettingTab(new GeminiChatbotSettingTab(this.app, this));
@@ -129,6 +142,153 @@ export default class GeminiChatbotPlugin extends Plugin {
 		if (this.inputField) {
 			this.inputField.focus();
 		}
+	}
+
+	public registerCustomPromptCommands() {
+		// First, remove any existing custom prompt commands
+		// Note: Obsidian doesn't have a direct way to remove commands, 
+		// so we rely on plugin reload for cleanup
+
+		// Register commands for each custom prompt
+		this.settings.customPrompts.forEach((prompt) => {
+			this.addCommand({
+				id: `custom-prompt-${prompt.id}`,
+				name: `Custom Prompt: ${prompt.name}`,
+				callback: () => {
+					this.executeCustomPrompt(prompt);
+				}
+			});
+		});
+	}
+
+	private async executeCustomPrompt(prompt: CustomPrompt) {
+		// Open chat if it's closed
+		if (this.chatContainer?.classList.contains("initially-hidden")) {
+			this.toggleChatContainer();
+		}
+
+		let processedPrompt = prompt.prompt;
+
+		// Replace placeholders with actual content
+		const activeFile = this.app.workspace.getActiveFile();
+		if (activeFile) {
+			// Get selected text
+			const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+			const selection = activeView?.editor?.getSelection() || "";
+
+			// Get full content
+			const fileContent = await this.app.vault.read(activeFile);
+
+			// Replace placeholders
+			processedPrompt = processedPrompt
+				.replace(/\{\{selection\}\}/g, selection)
+				.replace(/\{\{content\}\}/g, fileContent);
+		}
+
+		// Insert the processed prompt into the input field
+		if (this.inputField) {
+			this.inputField.value = processedPrompt;
+			this.inputField.focus();
+			
+			// Optionally auto-send the prompt
+			// Uncomment the next line if you want prompts to be sent automatically
+			// this.handleMessage(processedPrompt);
+		}
+	}
+
+	private showCustomPromptsDropdown() {
+		// Remove any existing dropdown
+		const existingDropdown = document.querySelector('.custom-prompts-dropdown');
+		if (existingDropdown) {
+			existingDropdown.remove();
+			return; // Toggle behavior - close if already open
+		}
+
+		if (this.settings.customPrompts.length === 0) {
+			new Notice("No custom prompts available. Add some in Settings → VaultAI.");
+			return;
+		}
+
+		// Create dropdown
+		const dropdown = document.createElement('div');
+		dropdown.classList.add('custom-prompts-dropdown');
+		
+		// Position it near the prompts button
+		const promptsButton = this.chatContainer.querySelector('.prompts-button') as HTMLElement;
+		if (!promptsButton) return;
+
+		const buttonRect = promptsButton.getBoundingClientRect();
+		dropdown.style.position = 'fixed';
+		dropdown.style.bottom = `${window.innerHeight - buttonRect.top + 10}px`;
+		dropdown.style.right = `${window.innerWidth - buttonRect.right}px`;
+		dropdown.style.maxWidth = '300px';
+		dropdown.style.maxHeight = '200px';
+		dropdown.style.overflowY = 'auto';
+		dropdown.style.backgroundColor = 'var(--background-primary)';
+		dropdown.style.border = '1px solid var(--background-modifier-border)';
+		dropdown.style.borderRadius = '8px';
+		dropdown.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.15)';
+		dropdown.style.zIndex = '1000';
+		dropdown.style.padding = '8px';
+
+		// Add prompts to dropdown
+		this.settings.customPrompts.forEach((prompt) => {
+			const promptItem = document.createElement('div');
+			promptItem.classList.add('custom-prompt-item');
+			promptItem.style.padding = '8px 12px';
+			promptItem.style.cursor = 'pointer';
+			promptItem.style.borderRadius = '6px';
+			promptItem.style.marginBottom = '4px';
+
+			const promptName = document.createElement('div');
+			promptName.textContent = prompt.name;
+			promptName.style.fontWeight = '500';
+			promptName.style.fontSize = '14px';
+			
+			const promptDesc = document.createElement('div');
+			promptDesc.textContent = prompt.description || 'No description';
+			promptDesc.style.fontSize = '12px';
+			promptDesc.style.color = 'var(--text-muted)';
+			promptDesc.style.marginTop = '2px';
+
+			promptItem.appendChild(promptName);
+			if (prompt.description) {
+				promptItem.appendChild(promptDesc);
+			}
+
+			// Hover effects
+			promptItem.addEventListener('mouseenter', () => {
+				promptItem.style.backgroundColor = 'var(--background-modifier-hover)';
+			});
+			
+			promptItem.addEventListener('mouseleave', () => {
+				promptItem.style.backgroundColor = 'transparent';
+			});
+
+			// Click handler
+			promptItem.addEventListener('click', () => {
+				this.executeCustomPrompt(prompt);
+				dropdown.remove();
+			});
+
+			dropdown.appendChild(promptItem);
+		});
+
+		// Add to body
+		document.body.appendChild(dropdown);
+
+		// Close dropdown when clicking outside
+		const closeDropdown = (e: MouseEvent) => {
+			if (!dropdown.contains(e.target as Node) && !promptsButton.contains(e.target as Node)) {
+				dropdown.remove();
+				document.removeEventListener('click', closeDropdown);
+			}
+		};
+
+		// Use setTimeout to avoid immediate closure
+		setTimeout(() => {
+			document.addEventListener('click', closeDropdown);
+		}, 100);
 	}
 
 	private async handleMessage(message: string) {
@@ -763,6 +923,12 @@ export default class GeminiChatbotPlugin extends Plugin {
 		const actionsContainer = document.createElement("div");
 		actionsContainer.addClass("input-actions");
 
+		// Custom prompts button
+		const promptsButton = document.createElement("button");
+		promptsButton.addClass("prompts-button");
+		promptsButton.textContent = "✨";
+		promptsButton.title = "Custom Prompts";
+
 		// Mention button
 		const mentionButton = document.createElement("button");
 		mentionButton.addClass("mention-button");
@@ -773,6 +939,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 		sendButton.addClass("send-button");
 		sendButton.textContent = "↑";
 
+		actionsContainer.appendChild(promptsButton);
 		actionsContainer.appendChild(mentionButton);
 		actionsContainer.appendChild(sendButton);
 
@@ -790,6 +957,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 		});
 
 		const sendButton = this.chatContainer.querySelector(".send-button");
+		const promptsButton = this.chatContainer.querySelector(".prompts-button");
 		const inputField = this.chatContainer.querySelector(
 			".chat-input"
 		) as HTMLTextAreaElement;
@@ -797,6 +965,10 @@ export default class GeminiChatbotPlugin extends Plugin {
 		this.messagesContainer = this.chatContainer.querySelector(
 			".gemini-chat-messages"
 		);
+
+		promptsButton?.addEventListener("click", () => {
+			this.showCustomPromptsDropdown();
+		});
 
 		sendButton?.addEventListener("click", () => {
 			if (this.inputField) {
@@ -2044,5 +2216,144 @@ class GeminiChatbotSettingTab extends PluginSettingTab {
 						text.inputEl.type === "password" ? "text" : "password";
 				});
 			});
+
+		// Custom Prompts Section
+		containerEl.createEl("h3", { text: "Custom Prompts" });
+		
+		const customPromptsDesc = containerEl.createEl("p", {
+			text: "Create custom prompts that can be quickly accessed from the chat interface or command palette."
+		});
+		customPromptsDesc.style.marginBottom = "20px";
+		customPromptsDesc.style.color = "var(--text-muted)";
+
+		// Display existing custom prompts
+		this.displayCustomPrompts(containerEl);
+
+		// Add new prompt button
+		new Setting(containerEl)
+			.setName("Add Custom Prompt")
+			.setDesc("Create a new custom prompt")
+			.addButton((button) => {
+				button.setButtonText("Add Prompt")
+					.setCta()
+					.onClick(() => {
+						this.showAddPromptModal();
+					});
+			});
+	}
+
+	private displayCustomPrompts(containerEl: HTMLElement): void {
+		const promptsContainer = containerEl.createDiv("custom-prompts-container");
+		
+		if (this.plugin.settings.customPrompts.length === 0) {
+			const emptyState = promptsContainer.createEl("p", {
+				text: "No custom prompts yet. Create your first one below!"
+			});
+			emptyState.style.color = "var(--text-muted)";
+			emptyState.style.fontStyle = "italic";
+			emptyState.style.textAlign = "center";
+			emptyState.style.padding = "20px";
+			return;
+		}
+
+		this.plugin.settings.customPrompts.forEach((prompt, index) => {
+			const promptItem = promptsContainer.createDiv("custom-prompt-item");
+			promptItem.style.border = "1px solid var(--background-modifier-border)";
+			promptItem.style.borderRadius = "8px";
+			promptItem.style.padding = "15px";
+			promptItem.style.marginBottom = "10px";
+			promptItem.style.backgroundColor = "var(--background-secondary)";
+
+			const promptHeader = promptItem.createDiv("prompt-header");
+			promptHeader.style.display = "flex";
+			promptHeader.style.justifyContent = "space-between";
+			promptHeader.style.alignItems = "center";
+			promptHeader.style.marginBottom = "8px";
+
+			const promptTitle = promptHeader.createEl("h4", { text: prompt.name });
+			promptTitle.style.margin = "0";
+			promptTitle.style.color = "var(--text-normal)";
+
+			const promptActions = promptHeader.createDiv("prompt-actions");
+			promptActions.style.display = "flex";
+			promptActions.style.gap = "8px";
+
+			// Edit button
+			const editButton = promptActions.createEl("button", { text: "Edit" });
+			editButton.style.padding = "4px 8px";
+			editButton.style.fontSize = "12px";
+			editButton.style.cursor = "pointer";
+			editButton.addEventListener("click", () => {
+				this.showEditPromptModal(prompt, index);
+			});
+
+			// Delete button
+			const deleteButton = promptActions.createEl("button", { text: "Delete" });
+			deleteButton.style.padding = "4px 8px";
+			deleteButton.style.fontSize = "12px";
+			deleteButton.style.cursor = "pointer";
+			deleteButton.style.color = "var(--text-error)";
+			deleteButton.addEventListener("click", () => {
+				this.deletePrompt(index);
+			});
+
+			// Description
+			if (prompt.description) {
+				const promptDesc = promptItem.createEl("p", { text: prompt.description });
+				promptDesc.style.margin = "0 0 8px 0";
+				promptDesc.style.color = "var(--text-muted)";
+				promptDesc.style.fontSize = "14px";
+			}
+
+			// Prompt preview (truncated)
+			const promptPreview = promptItem.createEl("code", {
+				text: prompt.prompt.length > 100 ? prompt.prompt.substring(0, 100) + "..." : prompt.prompt
+			});
+			promptPreview.style.display = "block";
+			promptPreview.style.padding = "8px";
+			promptPreview.style.backgroundColor = "var(--background-primary)";
+			promptPreview.style.borderRadius = "4px";
+			promptPreview.style.fontSize = "12px";
+			promptPreview.style.whiteSpace = "pre-wrap";
+			promptPreview.style.overflow = "hidden";
+		});
+	}
+
+	private async showAddPromptModal(): Promise<void> {
+		const modal = new CustomPromptModal(this.app, "Add Custom Prompt", "", "", "", (name, description, prompt) => {
+			const newPrompt: CustomPrompt = {
+				id: Date.now().toString(),
+				name,
+				description,
+				prompt
+			};
+			this.plugin.settings.customPrompts.push(newPrompt);
+			this.plugin.saveSettings();
+			this.plugin.registerCustomPromptCommands();
+			this.display(); // Refresh the settings display
+		});
+		modal.open();
+	}
+
+	private async showEditPromptModal(prompt: CustomPrompt, index: number): Promise<void> {
+		const modal = new CustomPromptModal(this.app, "Edit Custom Prompt", prompt.name, prompt.description, prompt.prompt, (name, description, promptText) => {
+			this.plugin.settings.customPrompts[index] = {
+				...prompt,
+				name,
+				description,
+				prompt: promptText
+			};
+			this.plugin.saveSettings();
+			this.plugin.registerCustomPromptCommands();
+			this.display(); // Refresh the settings display
+		});
+		modal.open();
+	}
+
+	private async deletePrompt(index: number): Promise<void> {
+		this.plugin.settings.customPrompts.splice(index, 1);
+		await this.plugin.saveSettings();
+		this.plugin.registerCustomPromptCommands();
+		this.display(); // Refresh the settings display
 	}
 }
