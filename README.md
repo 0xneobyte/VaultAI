@@ -49,6 +49,7 @@ For comprehensive guides, examples, and troubleshooting:
 -   Google Gemini API key (free tier available)
 
 ## Support
+If you find this plugin helpful:
 
 -   [Report Issues](https://github.com/0xneobyte/VaultAI/issues)
 -   [Feature Requests](https://github.com/0xneobyte/VaultAI/issues/new)
@@ -64,10 +65,8 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-<div align="center">
-
 **Made by [Neo](https://github.com/0xneobyte)**
 
-[![Buy Me A Coffee](https://img.shields.io/badge/☕-Buy%20Me%20A%20Coffee-yellow?style=flat-square)](https://www.buymeacoffee.com/0xneobyte)
+<p><a href="https://www.buymeacoffee.com/0xneobyte"> <img align="left" src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" width="150" alt="0xneobyte" /></a></p><br><br>
 
-</div>
+
