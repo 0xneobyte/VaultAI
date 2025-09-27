@@ -1357,3 +1357,60 @@
 	width: var(--dynamic-width, 380px);
 	height: var(--dynamic-height, 590px);
 }
+
+/* MCP Server Status Indicators */
+.mcp-status-connected {
+	background-color: var(--color-green);
+	color: var(--text-on-accent);
+}
+
+.mcp-status-connecting {
+	background-color: var(--color-yellow);
+	color: var(--text-on-accent);
+}
+
+.mcp-status-disabled {
+	background-color: var(--text-muted);
+	color: var(--text-on-accent);
+}
+
+/* MCP Action Buttons */
+.mcp-tool-button, .mcp-prompt-button {
+	border-left: 3px solid var(--color-blue);
+}
+
+.mcp-tool-button:hover {
+	border-left-color: var(--color-green);
+}
+
+.mcp-prompt-button:hover {
+	border-left-color: var(--color-yellow);
+}
+
+/* MCP Server Examples */
+.mcp-server-examples {
+	margin-top: 20px;
+	padding: 15px;
+	background-color: var(--background-secondary);
+	border-radius: 8px;
+}
+
+.mcp-server-example {
+	margin-bottom: 15px;
+	padding: 10px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	background-color: var(--background-primary);
+}
+
+.mcp-server-example strong {
+	display: block;
+	margin-bottom: 5px;
+	color: var(--text-accent);
+}
+
+.mcp-server-example p {
+	margin: 0 0 10px 0;
+	color: var(--text-muted);
+	font-size: 0.9em;
+}

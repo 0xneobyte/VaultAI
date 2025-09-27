@@ -1,9 +1,11 @@
 import { App, Notice, Plugin, PluginSettingTab, Setting, MarkdownView, Editor } from "obsidian";
 import { GeminiService } from "./src/services/GeminiService";
+import { MCPService, MCPServerConfig } from "./src/services/MCPService";
 import { LanguageSelectionModal } from "./src/modals/LanguageSelectionModal";
 import { MarkdownRenderer } from "obsidian";
 import { FileSelectionModal } from "./src/modals/FileSelectionModal";
 import { CustomPromptModal } from "./src/modals/CustomPromptModal";
+import { MCPServerModal } from "./src/modals/MCPServerModal";
 
 // Core interfaces for chat functionality
 interface ChatMessage {
@@ -32,6 +34,7 @@ interface GeminiChatbotSettings {
 	isDocked: boolean;
 	chatSessions: ChatSession[];
 	customPrompts: CustomPrompt[];
+	mcpServers: MCPServerConfig[];
 }
 
 // Default plugin settings
@@ -41,6 +44,7 @@ const DEFAULT_SETTINGS: GeminiChatbotSettings = {
 	isDocked: false,
 	chatSessions: [],
 	customPrompts: [],
+	mcpServers: [],
 };
 
 export default class GeminiChatbotPlugin extends Plugin {
@@ -49,6 +53,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 	chatIcon: HTMLElement;
 	chatContainer: HTMLElement;
 	private geminiService: GeminiService | null = null;
+	public mcpService: MCPService | null = null;
 	private messagesContainer: HTMLElement | null = null;
 	private inputField: HTMLTextAreaElement | null = null;
 	private currentFileContent: string | null = null;
@@ -73,6 +78,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 		if (this.settings.apiKey) {
 			this.initializeGeminiService();
 		}
+		
+		// Initialize MCP Service
+		this.initializeMCPService();
 
 		// Add command palette commands
 		this.addCommand({
@@ -180,6 +188,23 @@ export default class GeminiChatbotPlugin extends Plugin {
 			}
 		} catch (error) {
 			console.error("Failed to initialize Gemini service:", error);
+		}
+	}
+
+	public initializeMCPService() {
+		try {
+			this.mcpService = new MCPService();
+			// Connect to enabled MCP servers
+			for (const serverConfig of this.settings.mcpServers) {
+				if (serverConfig.enabled) {
+					this.mcpService.connectToServer(serverConfig).catch(error => {
+						console.error(`Failed to connect to MCP server ${serverConfig.name}:`, error);
+						new Notice(`Failed to connect to MCP server ${serverConfig.name}`);
+					});
+				}
+			}
+		} catch (error) {
+			console.error("Failed to initialize MCP service:", error);
 		}
 	}
 
@@ -501,6 +526,83 @@ export default class GeminiChatbotPlugin extends Plugin {
 			}
 
 			this.addErrorMessage(errorMessage);
+		}
+	}
+
+	private async handleMCPToolClick(tool: any): Promise<void> {
+		if (!this.mcpService) return;
+
+		try {
+			// For now, show a simple input dialog for tool arguments
+			const argsInput = prompt(`Enter arguments for ${tool.name} (JSON format):`);
+			let args = {};
+			
+			if (argsInput) {
+				try {
+					args = JSON.parse(argsInput);
+				} catch (e) {
+					// If not valid JSON, treat as simple string query
+					args = { query: argsInput };
+				}
+			}
+
+			// Call the MCP tool
+			const result = await this.mcpService.callTool(tool.serverId, tool.name, args);
+			
+			// Display the result in the chat
+			const botMessage: ChatMessage = {
+				role: "bot",
+				content: `**MCP Tool Result (${tool.name})**\n\n${JSON.stringify(result, null, 2)}`,
+				timestamp: Date.now(),
+			};
+
+			await this.addMessageToChat(botMessage);
+			
+			// Update the session
+			if (this.currentSession) {
+				this.currentSession.messages.push(botMessage);
+			}
+
+		} catch (error) {
+			console.error("Error calling MCP tool:", error);
+			this.addErrorMessage(`Failed to execute MCP tool: ${tool.name}`);
+		}
+	}
+
+	private async handleMCPPromptClick(prompt: any): Promise<void> {
+		if (!this.mcpService) return;
+
+		try {
+			// For now, show a simple input dialog for prompt arguments
+			const argsInput = prompt(`Enter arguments for prompt "${prompt.name}" (JSON format):`);
+			let args = {};
+			
+			if (argsInput) {
+				try {
+					args = JSON.parse(argsInput);
+				} catch (e) {
+					// If not valid JSON, create simple key-value pair
+					args = { input: argsInput };
+				}
+			}
+
+			// Get the MCP prompt
+			const result = await this.mcpService.getPrompt(prompt.serverId, prompt.name, args);
+			
+			// Use the prompt result to populate the input field
+			if (result && result.messages && result.messages.length > 0) {
+				const promptText = result.messages[0].content.text || JSON.stringify(result, null, 2);
+				
+				// Set the input field value
+				if (this.inputField) {
+					this.inputField.value = promptText;
+					this.inputField.focus();
+				}
+			}
+
+		} catch (error) {
+			console.error("Error getting MCP prompt:", error);
+			this.addErrorMessage(`Failed to get MCP prompt: ${prompt.name}`);
 		}
 	}
 
@@ -946,7 +1048,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 		title.textContent = "Suggested";
 		suggestedActions.appendChild(title);
 
-		// Action buttons
+		// Default action buttons
 		const actions = [
 			{ icon: "📝", text: "Summarize this page" },
 			{ icon: "🔍", text: "Ask about this page" },
@@ -966,6 +1068,86 @@ export default class GeminiChatbotPlugin extends Plugin {
 			button.appendChild(document.createTextNode(action.text));
 			suggestedActions.appendChild(button);
 		});
+
+		// Add MCP tools if available
+		if (this.mcpService) {
+			const mcpTools = this.mcpService.getAllTools();
+			if (mcpTools.length > 0) {
+				const mcpTitle = document.createElement("h4");
+				mcpTitle.textContent = "MCP Tools";
+				mcpTitle.style.marginTop = "15px";
+				mcpTitle.style.marginBottom = "8px";
+				mcpTitle.style.color = "var(--text-muted)";
+				suggestedActions.appendChild(mcpTitle);
+
+				mcpTools.slice(0, 4).forEach((tool) => { // Limit to 4 tools to avoid clutter
+					const button = document.createElement("div");
+					button.addClass("vaultai-action-button", "mcp-tool-button");
+
+					const icon = document.createElement("span");
+					icon.addClass("vaultai-action-icon");
+					icon.textContent = "🔧"; // Tool icon
+
+					const textSpan = document.createElement("span");
+					textSpan.textContent = tool.name;
+					
+					const serverSpan = document.createElement("span");
+					serverSpan.textContent = ` (${tool.serverName})`;
+					serverSpan.style.fontSize = "0.8em";
+					serverSpan.style.color = "var(--text-muted)";
+
+					button.appendChild(icon);
+					button.appendChild(textSpan);
+					button.appendChild(serverSpan);
+					
+					// Add click handler for MCP tools
+					button.addEventListener("click", () => {
+						this.handleMCPToolClick(tool);
+					});
+
+					suggestedActions.appendChild(button);
+				});
+			}
+
+			// Add MCP prompts if available
+			const mcpPrompts = this.mcpService.getAllPrompts();
+			if (mcpPrompts.length > 0) {
+				const promptTitle = document.createElement("h4");
+				promptTitle.textContent = "MCP Prompts";
+				promptTitle.style.marginTop = "15px";
+				promptTitle.style.marginBottom = "8px";
+				promptTitle.style.color = "var(--text-muted)";
+				suggestedActions.appendChild(promptTitle);
+
+				mcpPrompts.slice(0, 3).forEach((prompt) => { // Limit to 3 prompts
+					const button = document.createElement("div");
+					button.addClass("vaultai-action-button", "mcp-prompt-button");
+
+					const icon = document.createElement("span");
+					icon.addClass("vaultai-action-icon");
+					icon.textContent = "💡"; // Prompt icon
+
+					const textSpan = document.createElement("span");
+					textSpan.textContent = prompt.name;
+					
+					const serverSpan = document.createElement("span");
+					serverSpan.textContent = ` (${prompt.serverName})`;
+					serverSpan.style.fontSize = "0.8em";
+					serverSpan.style.color = "var(--text-muted)";
+
+					button.appendChild(icon);
+					button.appendChild(textSpan);
+					button.appendChild(serverSpan);
+
+					// Add click handler for MCP prompts
+					button.addEventListener("click", () => {
+						this.handleMCPPromptClick(prompt);
+					});
+
+					suggestedActions.appendChild(button);
+				});
+			}
+		}
 
 		return suggestedActions;
 	}
@@ -1481,9 +1663,14 @@ ${surroundingLines.join('\n')}
 		new Notice(this.insertMode ? "Insert mode ON" : "Insert mode OFF");
 	}
 
-	onunload() {
+	async onunload() {
 		this.chatIcon?.remove();
 		this.chatContainer?.remove();
+		
+		// Disconnect all MCP servers
+		if (this.mcpService) {
+			await this.mcpService.disconnectAll();
+		}
 	}
 
 	public encryptApiKey(key: string): string {
@@ -2503,6 +2690,30 @@ class GeminiChatbotSettingTab extends PluginSettingTab {
 				});
 			});
 
+		// MCP Servers Section
+		containerEl.createEl("h3", { text: "MCP Servers" });
+		
+		const mcpDesc = containerEl.createEl("p", {
+			text: "Connect to Model Context Protocol (MCP) servers to extend VaultAI's capabilities with external tools, resources, and data sources."
+		});
+		mcpDesc.style.marginBottom = "20px";
+		mcpDesc.style.color = "var(--text-muted)";
+
+		// Display existing MCP servers
+		this.displayMCPServers(containerEl);
+
+		// Add new MCP server button
+		new Setting(containerEl)
+			.setName("Add MCP Server")
+			.setDesc("Configure a new MCP server connection")
+			.addButton((button) => {
+				button.setButtonText("Add Server")
+					.setCta()
+					.onClick(() => {
+						this.showAddMCPServerModal();
+					});
+			});
+
 		// Custom Prompts Section
 		containerEl.createEl("h3", { text: "Custom Prompts" });
 		
@@ -2526,6 +2737,143 @@ class GeminiChatbotSettingTab extends PluginSettingTab {
 						this.showAddPromptModal();
 					});
 			});
+	}
+
+	private displayMCPServers(containerEl: HTMLElement): void {
+		const serversContainer = containerEl.createDiv("mcp-servers-container");
+		
+		if (this.plugin.settings.mcpServers.length === 0) {
+			const emptyState = serversContainer.createEl("p", {
+				text: "No MCP servers configured yet. Add your first one below!"
+			});
+			emptyState.style.color = "var(--text-muted)";
+			emptyState.style.fontStyle = "italic";
+			emptyState.style.textAlign = "center";
+			emptyState.style.padding = "20px";
+			return;
+		}
+
+		this.plugin.settings.mcpServers.forEach((server, index) => {
+			const serverItem = serversContainer.createDiv("mcp-server-item");
+			serverItem.style.border = "1px solid var(--background-modifier-border)";
+			serverItem.style.borderRadius = "8px";
+			serverItem.style.padding = "15px";
+			serverItem.style.marginBottom = "10px";
+			serverItem.style.backgroundColor = "var(--background-secondary)";
+
+			const headerDiv = serverItem.createDiv("mcp-server-header");
+			headerDiv.style.display = "flex";
+			headerDiv.style.justifyContent = "space-between";
+			headerDiv.style.alignItems = "center";
+			headerDiv.style.marginBottom = "10px";
+
+			const titleDiv = headerDiv.createDiv();
+			const title = titleDiv.createEl("strong", { text: server.name });
+			title.style.fontSize = "1.1em";
+
+			// Connection status
+			const statusDiv = headerDiv.createDiv();
+			const isConnected = this.plugin.mcpService?.isServerConnected(server.id) || false;
+			const status = statusDiv.createEl("span", {
+				text: isConnected ? "Connected" : (server.enabled ? "Connecting..." : "Disabled"),
+				cls: isConnected ? "mcp-status-connected" : (server.enabled ? "mcp-status-connecting" : "mcp-status-disabled")
+			});
+			status.style.padding = "4px 8px";
+			status.style.borderRadius = "12px";
+			status.style.fontSize = "0.8em";
+			status.style.fontWeight = "500";
+
+			const infoDiv = serverItem.createDiv("mcp-server-info");
+			infoDiv.style.marginBottom = "10px";
+
+			const commandDiv = infoDiv.createDiv();
+			commandDiv.createEl("strong", { text: "URL: " });
+			commandDiv.createSpan({ text: server.url });
+
+			const typeDiv = infoDiv.createDiv();
+			typeDiv.createEl("strong", { text: "Type: " });
+			typeDiv.createSpan({ text: server.type.toUpperCase() });
+
+			const actionsDiv = serverItem.createDiv("mcp-server-actions");
+			actionsDiv.style.display = "flex";
+			actionsDiv.style.gap = "10px";
+
+			// Toggle button
+			const toggleButton = actionsDiv.createEl("button", {
+				text: server.enabled ? "Disable" : "Enable",
+				cls: server.enabled ? "mod-warning" : "mod-cta"
+			});
+			toggleButton.addEventListener("click", async () => {
+				server.enabled = !server.enabled;
+				if (server.enabled && this.plugin.mcpService) {
+					// Try to connect
+					await this.plugin.mcpService.connectToServer(server);
+				} else if (!server.enabled && this.plugin.mcpService) {
+					// Disconnect
+					await this.plugin.mcpService.disconnectServer(server.id);
+				}
+				await this.plugin.saveSettings();
+				this.display(); // Refresh the display
+			});
+
+			// Edit button
+			const editButton = actionsDiv.createEl("button", { text: "Edit" });
+			editButton.addEventListener("click", () => {
+				this.showEditMCPServerModal(server, index);
+			});
+
+			// Delete button
+			const deleteButton = actionsDiv.createEl("button", {
+				text: "Delete",
+				cls: "mod-warning"
+			});
+			deleteButton.addEventListener("click", async () => {
+				if (confirm(`Delete MCP server "${server.name}"?`)) {
+					// Disconnect if connected
+					if (this.plugin.mcpService) {
+						await this.plugin.mcpService.disconnectServer(server.id);
+					}
+					this.plugin.settings.mcpServers.splice(index, 1);
+					await this.plugin.saveSettings();
+					this.display();
+				}
+			});
+		});
+	}
+
+	private async showAddMCPServerModal(): Promise<void> {
+		const modal = new MCPServerModal(this.app, async (serverConfig) => {
+			this.plugin.settings.mcpServers.push(serverConfig);
+			await this.plugin.saveSettings();
+			
+			// If enabled, try to connect
+			if (serverConfig.enabled && this.plugin.mcpService) {
+				await this.plugin.mcpService.connectToServer(serverConfig);
+			}
+			
+			this.display(); // Refresh the settings display
+		});
+		modal.open();
+	}
+
+	private async showEditMCPServerModal(serverConfig: MCPServerConfig, index: number): Promise<void> {
+		const modal = new MCPServerModal(this.app, async (updatedConfig) => {
+			// Disconnect old server if it was connected
+			if (this.plugin.mcpService) {
+				await this.plugin.mcpService.disconnectServer(serverConfig.id);
+			}
+			
+			this.plugin.settings.mcpServers[index] = updatedConfig;
+			await this.plugin.saveSettings();
+			
+			// Connect new configuration if enabled
+			if (updatedConfig.enabled && this.plugin.mcpService) {
+				await this.plugin.mcpService.connectToServer(updatedConfig);
+			}
+			
+			this.display(); // Refresh the settings display
+		}, serverConfig);
+		modal.open();
 	}
 
 	private displayCustomPrompts(containerEl: HTMLElement): void {
