@@ -3,6 +3,9 @@
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/0xneobyte/VaultAI)
 ![GitHub all releases](https://img.shields.io/github/downloads/0xneobyte/VaultAI/total)
 ![GitHub](https://img.shields.io/github/license/0xneobyte/VaultAI)
+ <a href="https://deepwiki.com/0xneobyte/VaultAI">
+    <img alt="Ask DeepWiki" src="https://deepwiki.com/badge.svg" />
+  </a>
 
 Transform your note-taking with an intelligent AI writing assistant powered by Google's Gemini AI. VaultAI brings deep editor integration, custom prompts, and seamless content generation directly to your Obsidian workspace.
 
