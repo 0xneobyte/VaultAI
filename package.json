@@ -28,7 +28,7 @@
 		"typescript": "4.7.4"
 	},
 	"dependencies": {
-		"@google/genai": "^0.4.0",
+		"@google/genai": "^1.29.1",
 		"@google/generative-ai": "^0.24.1"
 	}
 }
