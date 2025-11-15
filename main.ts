@@ -476,7 +476,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 				// Add citation info if available
 				if (ragResult.citations) {
-					response += "\n\n---\n*Response grounded in your vault*";
+					response += this.formatCitations(ragResult.citations);
 				}
 			} else if (this.ragMode && (!this.ragService || !this.ragService.getFileSearchStoreName())) {
 				// RAG mode is on but not initialized
@@ -1592,6 +1592,43 @@ ${surroundingLines.join('\n')}
 		}
 
 		new Notice(this.ragMode ? "RAG mode ON - Searching entire vault" : "RAG mode OFF");
+	}
+
+	private formatCitations(groundingMetadata: any): string {
+		if (!groundingMetadata || !groundingMetadata.groundingChunks) {
+			return "";
+		}
+
+		const chunks = groundingMetadata.groundingChunks;
+		if (!chunks || chunks.length === 0) {
+			return "";
+		}
+
+		// Extract unique file sources
+		const sources = new Set<string>();
+		chunks.forEach((chunk: any) => {
+			if (chunk.web) {
+				// Skip web sources for now, we're only showing vault sources
+				return;
+			}
+
+			// Extract file name from the chunk reference
+			// The chunk.retrievedContext.uri or chunk.retrievedContext.title might contain the file info
+			const context = chunk.retrievedContext;
+			if (context) {
+				const title = context.title || context.uri || "Unknown source";
+				sources.add(title);
+			}
+		});
+
+		if (sources.size === 0) {
+			return "";
+		}
+
+		// Create collapsible citation section
+		const sourcesList = Array.from(sources).map(source => `  - ${source}`).join('\n');
+
+		return `\n\n---\n<details>\n<summary>📚 Sources from your vault (${sources.size})</summary>\n\n${sourcesList}\n</details>`;
 	}
 
 	onunload() {
