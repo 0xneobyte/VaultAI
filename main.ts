@@ -1595,6 +1595,9 @@ ${surroundingLines.join('\n')}
 	}
 
 	private formatCitations(groundingMetadata: any): string {
+		// Debug: Log the full structure
+		console.log("Grounding Metadata:", JSON.stringify(groundingMetadata, null, 2));
+
 		if (!groundingMetadata || !groundingMetadata.groundingChunks) {
 			return "";
 		}
@@ -1606,18 +1609,42 @@ ${surroundingLines.join('\n')}
 
 		// Extract unique file sources
 		const sources = new Set<string>();
-		chunks.forEach((chunk: any) => {
+		chunks.forEach((chunk: any, index: number) => {
+			console.log(`Chunk ${index}:`, JSON.stringify(chunk, null, 2));
+
 			if (chunk.web) {
 				// Skip web sources for now, we're only showing vault sources
 				return;
 			}
 
-			// Extract file name from the chunk reference
-			// The chunk.retrievedContext.uri or chunk.retrievedContext.title might contain the file info
-			const context = chunk.retrievedContext;
-			if (context) {
-				const title = context.title || context.uri || "Unknown source";
-				sources.add(title);
+			// Try multiple possible paths to find the file name
+			let fileName = null;
+
+			if (chunk.retrievedContext) {
+				fileName = chunk.retrievedContext.title ||
+				          chunk.retrievedContext.uri ||
+				          chunk.retrievedContext.fileName ||
+				          chunk.retrievedContext.name;
+			}
+
+			// Try other possible locations
+			if (!fileName && chunk.grounding) {
+				fileName = chunk.grounding.title || chunk.grounding.uri;
+			}
+
+			if (!fileName && chunk.title) {
+				fileName = chunk.title;
+			}
+
+			if (!fileName && chunk.uri) {
+				fileName = chunk.uri;
+			}
+
+			if (fileName) {
+				sources.add(fileName);
+			} else {
+				console.warn("Could not extract file name from chunk:", chunk);
+				sources.add("Unknown source");
 			}
 		});
 
