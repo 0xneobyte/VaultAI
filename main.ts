@@ -471,11 +471,13 @@ export default class GeminiChatbotPlugin extends Plugin {
 			// Use RAG if enabled and available
 			let response: string;
 			if (this.ragMode && this.ragService && this.ragService.getFileSearchStoreName()) {
-				response = await this.geminiService.sendMessage(
-					finalMessage,
-					true,
-					this.ragService.getFileSearchStoreName()!
-				);
+				const ragResult = await this.ragService.queryWithRAG(contextMessage || finalMessage);
+				response = ragResult.text;
+
+				// Add citation info if available
+				if (ragResult.citations) {
+					response += "\n\n---\n*Response grounded in your vault*";
+				}
 			} else if (this.ragMode && (!this.ragService || !this.ragService.getFileSearchStoreName())) {
 				// RAG mode is on but not initialized
 				typingIndicator.remove();

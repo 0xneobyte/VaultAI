@@ -1,9 +1,56 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import { TFile, Vault, Notice } from "obsidian";
 
 // Note: crypto module needs to be imported from browser-compatible alternative
 // Using Web Crypto API instead
 declare const crypto: Crypto;
+
+// Declare File Search Store types
+// These APIs exist at runtime but are not yet in TypeScript definitions
+interface FileSearchStoreConfig {
+    displayName?: string;
+}
+
+interface FileSearchStore {
+    name: string;
+}
+
+interface FileUploadConfig {
+    displayName?: string;
+    customMetadata?: Array<{
+        key: string;
+        stringValue?: string;
+        numericValue?: number;
+    }>;
+}
+
+interface Operation {
+    done: boolean;
+}
+
+// Type for the additional File Search APIs that exist at runtime
+interface FileSearchStoreAPI {
+    create(params: { config: FileSearchStoreConfig }): Promise<FileSearchStore>;
+    list(): AsyncIterable<FileSearchStore>;
+    delete(params: { name: string; config?: { force: boolean } }): Promise<void>;
+    uploadToFileSearchStore(params: {
+        file: File;
+        fileSearchStoreName: string;
+        config?: FileUploadConfig;
+    }): Promise<Operation>;
+}
+
+interface OperationsAPI {
+    get(params: { operation: Operation }): Promise<Operation>;
+}
+
+interface ModelsAPI {
+    generateContent(params: {
+        model: string;
+        contents: string;
+        config: any;
+    }): Promise<{ text: string; candidates?: any[] }>;
+}
 
 interface FileMetadata {
     path: string;
@@ -21,7 +68,11 @@ interface SyncProgress {
 }
 
 export class RAGService {
-    private genAI: GoogleGenerativeAI;
+    private genAI: GoogleGenAI & {
+        fileSearchStores: FileSearchStoreAPI;
+        operations: OperationsAPI;
+        models: ModelsAPI;
+    };
     private fileSearchStoreName: string | null = null;
     private syncedFiles: Map<string, FileMetadata> = new Map();
     private vault: Vault;
@@ -35,26 +86,14 @@ export class RAGService {
     };
 
     constructor(apiKey: string, vault: Vault) {
-        this.genAI = new GoogleGenerativeAI(apiKey);
+        this.genAI = new GoogleGenAI({ apiKey: apiKey }) as any;
         this.vault = vault;
     }
 
     /**
      * Initialize or get existing File Search store
-     *
-     * TODO: Waiting for @google/generative-ai SDK to include File Search API
-     * Currently the fileSearchStores API is not available in the npm package
-     * See: RAG_IMPLEMENTATION_STATUS.md for details
      */
     async initializeStore(storeName: string = "VaultAI-FileSearchStore"): Promise<string> {
-        throw new Error(
-            "File Search API not yet available in @google/generative-ai package. " +
-            "This feature will be enabled when Google releases the SDK update. " +
-            "See RAG_IMPLEMENTATION_STATUS.md for more information."
-        );
-
-        // TODO: Uncomment when SDK is updated
-        /*
         try {
             // Check if store already exists
             if (this.fileSearchStoreName) {
@@ -69,44 +108,33 @@ export class RAGService {
             this.fileSearchStoreName = fileSearchStore.name;
             console.log(`File Search store created: ${this.fileSearchStoreName}`);
 
-            return this.fileSearchStoreName;
-        } catch (error) {
+            return this.fileSearchStoreName!;
+        } catch (error: any) {
             console.error("Error initializing File Search store:", error);
             throw new Error(`Failed to initialize RAG store: ${error.message}`);
         }
-        */
     }
 
     /**
      * Get list of all File Search stores
-     * TODO: Waiting for SDK update
      */
     async listStores(): Promise<any[]> {
-        return [];
-        // TODO: Uncomment when SDK is updated
-        /*
         try {
             const stores = [];
             for await (const store of this.genAI.fileSearchStores.list()) {
                 stores.push(store);
             }
             return stores;
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error listing stores:", error);
             return [];
         }
-        */
     }
 
     /**
      * Delete a File Search store
-     * TODO: Waiting for SDK update
      */
     async deleteStore(storeName: string): Promise<void> {
-        throw new Error("File Search API not yet available. See RAG_IMPLEMENTATION_STATUS.md");
-
-        // TODO: Uncomment when SDK is updated
-        /*
         try {
             await this.genAI.fileSearchStores.delete({
                 name: storeName,
@@ -117,11 +145,10 @@ export class RAGService {
                 this.fileSearchStoreName = null;
                 this.syncedFiles.clear();
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error deleting store:", error);
             throw new Error(`Failed to delete store: ${error.message}`);
         }
-        */
     }
 
     /**
@@ -175,15 +202,8 @@ export class RAGService {
 
     /**
      * Upload a single file to the File Search store
-     * TODO: Waiting for SDK update
      */
     private async uploadFile(file: TFile): Promise<boolean> {
-        // Placeholder - will be enabled when SDK is updated
-        console.log(`Would upload file: ${file.path}`);
-        return false;
-
-        // TODO: Uncomment when SDK is updated
-        /*
         try {
             if (!this.fileSearchStoreName) {
                 await this.initializeStore();
@@ -199,7 +219,7 @@ export class RAGService {
             // Upload directly to File Search store
             let operation = await this.genAI.fileSearchStores.uploadToFileSearchStore({
                 file: fileObject,
-                fileSearchStoreName: this.fileSearchStoreName,
+                fileSearchStoreName: this.fileSearchStoreName!,
                 config: {
                     displayName: file.name,
                     customMetadata: [
@@ -234,11 +254,10 @@ export class RAGService {
             });
 
             return true;
-        } catch (error) {
+        } catch (error: any) {
             console.error(`Error uploading file ${file.path}:`, error);
             return false;
         }
-        */
     }
 
     /**
@@ -298,17 +317,12 @@ export class RAGService {
 
     /**
      * Query the vault using RAG
-     * TODO: Waiting for SDK update
      */
     async queryWithRAG(
         query: string,
-        model: string = "gemini-2.0-flash-exp",
+        model: string = "gemini-2.5-flash",
         metadataFilter?: string
     ): Promise<{ text: string; citations?: any }> {
-        throw new Error("File Search API not yet available. See RAG_IMPLEMENTATION_STATUS.md");
-
-        // TODO: Uncomment when SDK is updated
-        /*
         try {
             if (!this.fileSearchStoreName) {
                 throw new Error("No File Search store initialized. Please sync your vault first.");
@@ -336,14 +350,13 @@ export class RAGService {
             });
 
             return {
-                text: response.text(),
+                text: response.text || "",
                 citations: response.candidates?.[0]?.groundingMetadata
             };
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error querying with RAG:", error);
             throw new Error(`RAG query failed: ${error.message}`);
         }
-        */
     }
 
     /**
