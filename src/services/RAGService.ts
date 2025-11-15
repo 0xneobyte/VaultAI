@@ -356,6 +356,10 @@ export class RAGService {
                 config: toolConfig
             });
 
+            // Debug: Log full response structure
+            console.log("Full RAG Response:", JSON.stringify(response, null, 2));
+            console.log("Candidates:", JSON.stringify(response.candidates, null, 2));
+
             return {
                 text: response.text || "",
                 citations: response.candidates?.[0]?.groundingMetadata
