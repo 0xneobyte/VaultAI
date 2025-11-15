@@ -13,6 +13,7 @@ Transform your note-taking with an intelligent AI writing assistant powered by G
 
 ## Key Features
 
+-   **🧠 RAG (Retrieval Augmented Generation)** - Search across your entire vault with AI-powered semantic search using Google's Gemini File Search API. Ask questions and get answers grounded in your notes with citations
 -   **Deep Editor Integration** - AI responses insert directly at your cursor position with real-time context awareness
 -   **Custom Prompts System** - Create reusable prompts with smart placeholders for repeated workflows
 -   **Keyboard Shortcuts** - Access all features via hotkeys and Command Palette integration
@@ -32,6 +33,28 @@ Transform your note-taking with an intelligent AI writing assistant powered by G
 -   Press `Ctrl/Cmd+Shift+V` to toggle chat
 -   Click the pin button to enable Insert Mode for cursor-based insertion
 -   Use Command Palette (`Ctrl/Cmd+P`) for quick AI commands
+
+## 🧠 RAG - Vault-Wide AI Search
+
+Transform your entire vault into an AI-powered knowledge base! VaultAI now supports RAG (Retrieval Augmented Generation) using Google's Gemini File Search API.
+
+### How It Works
+VaultAI indexes your vault and uses semantic search to find relevant notes when you ask questions. The AI then provides answers grounded in your actual notes with citations.
+
+### Setup RAG
+1. Open **Settings → VaultAI → RAG Settings**
+2. Toggle **"Enable RAG"** to ON
+3. Choose folder to index (use `/` for entire vault)
+4. Click **"Sync Now"** and wait for completion
+5. In chat, click the **🧠 button** to enable RAG mode
+
+### Features
+- **Smart Sync** - Only uploads new or modified files
+- **Flexible Indexing** - Index entire vault or specific folders
+- **Citation Support** - Responses indicate sources from your vault
+- **Progress Tracking** - Real-time sync status updates
+
+> **Note**: Inspired by [Discussion #22](https://github.com/0xneobyte/VaultAI/discussions/22) - turning your vault into something like Google Notebook LM!
 
 ## Documentation
 
