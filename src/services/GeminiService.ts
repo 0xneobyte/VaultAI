@@ -3,10 +3,13 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 export class GeminiService {
     private model: any;
     private chat: any;
+    private genAI: GoogleGenerativeAI;
+    private apiKey: string;
 
     constructor(apiKey: string) {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        this.model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
+        this.apiKey = apiKey;
+        this.genAI = new GoogleGenerativeAI(apiKey);
+        this.model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp"});
         this.startChat();
     }
 
@@ -14,13 +17,14 @@ export class GeminiService {
         this.chat = this.model.startChat({
             history: [],
             generationConfig: {
-                maxOutputTokens: 1000,
+                maxOutputTokens: 2000,
             },
         });
     }
 
     async sendMessage(message: string): Promise<string> {
         try {
+            // Normal chat
             const result = await this.chat.sendMessage(message);
             const response = await result.response;
             return response.text();
@@ -43,5 +47,9 @@ export class GeminiService {
     async findActionItems(content: string): Promise<string> {
         const prompt = `Please analyze the following content and list all action items and tasks:\n\n${content}`;
         return this.sendMessage(prompt);
+    }
+
+    getApiKey(): string {
+        return this.apiKey;
     }
 } 

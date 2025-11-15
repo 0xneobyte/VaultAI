@@ -1,5 +1,6 @@
 import { App, Notice, Plugin, PluginSettingTab, Setting, MarkdownView, Editor } from "obsidian";
 import { GeminiService } from "./src/services/GeminiService";
+import { RAGService } from "./src/services/RAGService";
 import { LanguageSelectionModal } from "./src/modals/LanguageSelectionModal";
 import { MarkdownRenderer } from "obsidian";
 import { FileSelectionModal } from "./src/modals/FileSelectionModal";
@@ -32,6 +33,11 @@ interface GeminiChatbotSettings {
 	isDocked: boolean;
 	chatSessions: ChatSession[];
 	customPrompts: CustomPrompt[];
+	// RAG settings
+	ragEnabled: boolean;
+	ragFolderPath: string;
+	ragStoreName: string | null;
+	ragSyncedFiles: Record<string, any>;
 }
 
 // Default plugin settings
@@ -41,6 +47,11 @@ const DEFAULT_SETTINGS: GeminiChatbotSettings = {
 	isDocked: false,
 	chatSessions: [],
 	customPrompts: [],
+	// RAG defaults
+	ragEnabled: false,
+	ragFolderPath: "/",
+	ragStoreName: null,
+	ragSyncedFiles: {},
 };
 
 export default class GeminiChatbotPlugin extends Plugin {
@@ -49,6 +60,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 	chatIcon: HTMLElement;
 	chatContainer: HTMLElement;
 	private geminiService: GeminiService | null = null;
+	public ragService: RAGService | null = null;
 	private messagesContainer: HTMLElement | null = null;
 	private inputField: HTMLTextAreaElement | null = null;
 	private currentFileContent: string | null = null;
@@ -62,6 +74,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 	private cursorPosition: { line: number; ch: number } | null = null;
 	private editorContext: { fileName: string; lineContent: string; surroundingLines: string[] } | null = null;
 	private insertMode = false;
+
+	// RAG mode toggle
+	private ragMode = false;
 
 	// Rate limiting and context management
 	private lastApiCall = 0;
@@ -177,9 +192,39 @@ export default class GeminiChatbotPlugin extends Plugin {
 			if (this.settings.apiKey) {
 				const decryptedKey = this.decryptApiKey(this.settings.apiKey);
 				this.geminiService = new GeminiService(decryptedKey);
+
+				// Initialize RAG service if enabled
+				if (this.settings.ragEnabled) {
+					this.initializeRAGService();
+				}
 			}
 		} catch (error) {
 			console.error("Failed to initialize Gemini service:", error);
+		}
+	}
+
+	public initializeRAGService() {
+		try {
+			if (!this.geminiService) {
+				return;
+			}
+
+			const apiKey = this.geminiService.getApiKey();
+			this.ragService = new RAGService(apiKey, this.app.vault);
+
+			// Load existing store if available
+			if (this.settings.ragStoreName) {
+				this.ragService.setFileSearchStoreName(this.settings.ragStoreName);
+			}
+
+			// Load synced files metadata
+			if (this.settings.ragSyncedFiles) {
+				this.ragService.loadSyncedFilesMetadata(this.settings.ragSyncedFiles);
+			}
+
+			console.log("RAG service initialized");
+		} catch (error) {
+			console.error("Failed to initialize RAG service:", error);
 		}
 	}
 
@@ -360,34 +405,37 @@ export default class GeminiChatbotPlugin extends Plugin {
 		let contextMessage = message;
 		let context = "";
 
-		// Add referenced file content if any
-		const fileReferences = message.match(/@([^\s]+)/g);
-		if (fileReferences) {
-			contextMessage = message.replace(/@([^\s]+)/g, "").trim();
-			for (const ref of fileReferences) {
-				const fileName = ref.slice(1);
-				const fileContent = this.referencedFiles?.get(fileName);
-				if (fileContent) {
-					// Add only the first part of long files
-					const truncatedContent = this.truncateContent(fileContent);
-					context += `\nRelevant content from ${fileName}:\n${truncatedContent}\n`;
+		// Skip context building if RAG mode is enabled
+		if (!this.ragMode) {
+			// Add referenced file content if any
+			const fileReferences = message.match(/@([^\s]+)/g);
+			if (fileReferences) {
+				contextMessage = message.replace(/@([^\s]+)/g, "").trim();
+				for (const ref of fileReferences) {
+					const fileName = ref.slice(1);
+					const fileContent = this.referencedFiles?.get(fileName);
+					if (fileContent) {
+						// Add only the first part of long files
+						const truncatedContent = this.truncateContent(fileContent);
+						context += `\nRelevant content from ${fileName}:\n${truncatedContent}\n`;
+					}
 				}
 			}
-		}
 
-		// Add current file content if available and no specific file was referenced
-		const activeFile = this.app.workspace.getActiveFile();
-		if (activeFile && !fileReferences) {
-			const content = await this.app.vault.read(activeFile);
-			// Add only relevant parts of the current file
-			const truncatedContent = this.truncateContent(content);
-			context += `\nRelevant content from current note:\n${truncatedContent}\n`;
-		}
+			// Add current file content if available and no specific file was referenced
+			const activeFile = this.app.workspace.getActiveFile();
+			if (activeFile && !fileReferences) {
+				const content = await this.app.vault.read(activeFile);
+				// Add only relevant parts of the current file
+				const truncatedContent = this.truncateContent(content);
+				context += `\nRelevant content from current note:\n${truncatedContent}\n`;
+			}
 
-		// Add editor context (cursor position and surrounding lines)
-		const editorContext = this.getEditorContextString();
-		if (editorContext) {
-			context += editorContext;
+			// Add editor context (cursor position and surrounding lines)
+			const editorContext = this.getEditorContextString();
+			if (editorContext) {
+				context += editorContext;
+			}
 		}
 
 		// Prepare the final message
@@ -419,7 +467,28 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 		try {
 			this.lastApiCall = Date.now();
-			const response = await this.geminiService.sendMessage(finalMessage);
+
+			// Use RAG if enabled and available
+			let response: string;
+			if (this.ragMode && this.ragService && this.ragService.getFileSearchStoreName()) {
+				const ragResult = await this.ragService.queryWithRAG(contextMessage || finalMessage);
+				response = ragResult.text;
+
+				// Add citation info if available
+				if (ragResult.citations) {
+					response += this.formatCitations(ragResult.citations);
+				}
+			} else if (this.ragMode && (!this.ragService || !this.ragService.getFileSearchStoreName())) {
+				// RAG mode is on but not initialized
+				typingIndicator.remove();
+				this.addErrorMessage(
+					"RAG mode is enabled but your vault hasn't been synced yet. Please sync your vault in Settings → VaultAI → RAG Settings."
+				);
+				return;
+			} else {
+				response = await this.geminiService.sendMessage(finalMessage);
+			}
+
 			typingIndicator.remove();
 
 			const botMessage: ChatMessage = {
@@ -1008,9 +1077,16 @@ export default class GeminiChatbotPlugin extends Plugin {
 		insertButton.textContent = "📍";
 		insertButton.title = "Insert AI response at cursor position";
 
+		// RAG mode toggle button
+		const ragButton = document.createElement("button");
+		ragButton.addClass("rag-button");
+		ragButton.textContent = "🧠";
+		ragButton.title = "Toggle RAG mode (search entire vault)";
+
 		actionsContainer.appendChild(promptsButton);
 		actionsContainer.appendChild(mentionButton);
 		actionsContainer.appendChild(insertButton);
+		actionsContainer.appendChild(ragButton);
 		actionsContainer.appendChild(sendButton);
 
 		inputWrapper.appendChild(textarea);
@@ -1029,6 +1105,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 		const sendButton = this.chatContainer.querySelector(".send-button");
 		const promptsButton = this.chatContainer.querySelector(".prompts-button");
 		const insertButton = this.chatContainer.querySelector(".insert-button");
+		const ragButton = this.chatContainer.querySelector(".rag-button");
 		const inputField = this.chatContainer.querySelector(
 			".chat-input"
 		) as HTMLTextAreaElement;
@@ -1043,6 +1120,10 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 		insertButton?.addEventListener("click", () => {
 			this.toggleInsertMode();
+		});
+
+		ragButton?.addEventListener("click", () => {
+			this.toggleRAGMode();
 		});
 
 		sendButton?.addEventListener("click", () => {
@@ -1462,7 +1543,7 @@ ${surroundingLines.join('\n')}
 	private toggleInsertMode(): void {
 		this.insertMode = !this.insertMode;
 		const insertButton = this.chatContainer?.querySelector(".insert-button") as HTMLElement;
-		
+
 		if (insertButton) {
 			if (this.insertMode) {
 				insertButton.textContent = "📍✓";
@@ -1476,9 +1557,137 @@ ${surroundingLines.join('\n')}
 				insertButton.title = "Insert AI response at cursor position";
 			}
 		}
-		
+
 		this.updateEditorContext();
 		new Notice(this.insertMode ? "Insert mode ON" : "Insert mode OFF");
+	}
+
+	private toggleRAGMode(): void {
+		// Check if RAG is enabled and configured
+		if (!this.settings.ragEnabled) {
+			new Notice("RAG is not enabled. Enable it in Settings → VaultAI → RAG Settings");
+			return;
+		}
+
+		if (!this.ragService || !this.ragService.getFileSearchStoreName()) {
+			new Notice("Please sync your vault first in Settings → VaultAI → RAG Settings");
+			return;
+		}
+
+		this.ragMode = !this.ragMode;
+		const ragButton = this.chatContainer?.querySelector(".rag-button") as HTMLElement;
+
+		if (ragButton) {
+			if (this.ragMode) {
+				ragButton.textContent = "🧠✓";
+				ragButton.style.backgroundColor = "var(--interactive-accent)";
+				ragButton.style.color = "var(--text-on-accent)";
+				ragButton.title = "RAG mode ON - Searching entire vault";
+			} else {
+				ragButton.textContent = "🧠";
+				ragButton.style.backgroundColor = "";
+				ragButton.style.color = "";
+				ragButton.title = "Toggle RAG mode (search entire vault)";
+			}
+		}
+
+		new Notice(this.ragMode ? "RAG mode ON - Searching entire vault" : "RAG mode OFF");
+	}
+
+	private formatCitations(groundingMetadata: any): string {
+		if (!groundingMetadata || !groundingMetadata.groundingChunks) {
+			return "";
+		}
+
+		const chunks = groundingMetadata.groundingChunks;
+		if (!chunks || chunks.length === 0) {
+			return "";
+		}
+
+		// Extract information from chunks
+		const fileNames = new Set<string>();
+		const obsidianLinks = new Set<string>();
+		const hashtags = new Set<string>();
+		const textPreviews = new Set<string>();
+
+		chunks.forEach((chunk: any) => {
+			if (chunk.web) {
+				return; // Skip web sources
+			}
+
+			const context = chunk.retrievedContext;
+
+			// Debug: Log all available keys in retrievedContext
+			console.log("Retrieved Context Keys:", Object.keys(context || {}));
+
+			// Try multiple possible locations for file name/metadata
+			const fileName = context?.displayName ||
+			               context?.title ||
+			               context?.name ||
+			               context?.uri ||
+			               context?.metadata?.displayName ||
+			               context?.metadata?.path ||
+			               context?.customMetadata?.find?.((m: any) => m.key === "path")?.stringValue;
+
+			if (fileName) {
+				console.log("Found file name:", fileName);
+				fileNames.add(fileName);
+			}
+
+			const text = context?.text || "";
+
+			// Extract Obsidian-style [[links]]
+			const linkMatches = text.matchAll(/\[\[([^\]]+)\]\]/g);
+			for (const match of linkMatches) {
+				obsidianLinks.add(match[1]);
+			}
+
+			// Extract hashtags
+			const hashtagMatches = text.matchAll(/#[\w-]+/g);
+			for (const match of hashtagMatches) {
+				hashtags.add(match[0]);
+			}
+
+			// If we have no links or file names, add a preview of the text
+			if (obsidianLinks.size === 0 && fileNames.size === 0) {
+				const preview = text.trim().substring(0, 80).replace(/\n/g, ' ');
+				if (preview) {
+					textPreviews.add(`"${preview}..."`);
+				}
+			}
+		});
+
+		// Build sources list prioritizing file names, then links, then hashtags, then text previews
+		const allSources: string[] = [];
+
+		if (fileNames.size > 0) {
+			console.log("Using file names for citations:", Array.from(fileNames));
+			allSources.push(...Array.from(fileNames).map(name => `📄 ${name}`));
+		} else if (obsidianLinks.size > 0) {
+			console.log("Using Obsidian links for citations:", Array.from(obsidianLinks));
+			allSources.push(...Array.from(obsidianLinks).map(link => `📄 [[${link}]]`));
+		}
+
+		if (hashtags.size > 0 && (obsidianLinks.size > 0 || fileNames.size > 0)) {
+			// Show hashtags alongside links/files as additional context
+			allSources.push(...Array.from(hashtags).map(tag => `🏷️ ${tag}`));
+		}
+
+		if (allSources.length === 0 && textPreviews.size > 0) {
+			// Fallback to text previews if no structured info found
+			allSources.push(...Array.from(textPreviews).slice(0, 3)); // Limit to 3 previews
+		}
+
+		if (allSources.length === 0) {
+			// Last resort: just say how many chunks
+			return `\n\n---\n*Response grounded in ${chunks.length} source${chunks.length !== 1 ? 's' : ''} from your vault*`;
+		}
+
+		// Create collapsible citation section
+		const sourcesList = allSources.map(source => `  ${source}`).join('\n');
+		const count = fileNames.size || obsidianLinks.size || textPreviews.size;
+
+		return `\n\n---\n<details>\n<summary>📚 Sources from your vault (${count} reference${count !== 1 ? 's' : ''})</summary>\n\n${sourcesList}\n</details>`;
 	}
 
 	onunload() {
@@ -2526,6 +2735,104 @@ class GeminiChatbotSettingTab extends PluginSettingTab {
 						this.showAddPromptModal();
 					});
 			});
+
+		// RAG Settings Section
+		containerEl.createEl("h3", { text: "RAG Settings (Vault-Wide AI Search)" });
+
+		const ragDesc = containerEl.createEl("p", {
+			text: "Enable RAG (Retrieval Augmented Generation) to search and query your entire vault using AI. Your notes will be indexed and embedded for semantic search."
+		});
+		ragDesc.style.marginBottom = "20px";
+		ragDesc.style.color = "var(--text-muted)";
+
+		// Enable RAG toggle
+		new Setting(containerEl)
+			.setName("Enable RAG")
+			.setDesc("Enable vault-wide AI search using Google's File Search")
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.ragEnabled)
+					.onChange(async (value) => {
+						this.plugin.settings.ragEnabled = value;
+						await this.plugin.saveSettings();
+
+						if (value) {
+							this.plugin.initializeRAGService();
+							new Notice("RAG enabled. Please sync your vault below.");
+						} else {
+							new Notice("RAG disabled");
+						}
+
+						this.display(); // Refresh settings
+					});
+			});
+
+		// Only show RAG settings if enabled
+		if (this.plugin.settings.ragEnabled) {
+			// Folder path setting
+			new Setting(containerEl)
+				.setName("Vault Folder Path")
+				.setDesc("Choose which folder to index (use '/' for entire vault)")
+				.addText((text) => {
+					text
+						.setPlaceholder("/")
+						.setValue(this.plugin.settings.ragFolderPath)
+						.onChange(async (value) => {
+							this.plugin.settings.ragFolderPath = value || "/";
+							await this.plugin.saveSettings();
+						});
+				});
+
+			// Sync status
+			const syncStats = this.plugin.ragService?.getSyncStats() || { total: 0, synced: 0, pending: 0 };
+			const syncStatusContainer = containerEl.createDiv("rag-sync-status");
+			syncStatusContainer.style.padding = "10px";
+			syncStatusContainer.style.backgroundColor = "var(--background-secondary)";
+			syncStatusContainer.style.borderRadius = "8px";
+			syncStatusContainer.style.marginBottom = "15px";
+
+			const statusText = syncStatusContainer.createEl("p", {
+				text: `📊 Sync Status: ${syncStats.synced} files synced out of ${syncStats.total} tracked files`
+			});
+			statusText.style.margin = "0";
+
+			// Sync button
+			new Setting(containerEl)
+				.setName("Sync Vault")
+				.setDesc("Upload new and modified files to the File Search store")
+				.addButton((button) => {
+					button
+						.setButtonText("Sync Now")
+						.setCta()
+						.onClick(async () => {
+							await this.syncVaultWithProgress();
+						});
+				})
+				.addButton((button) => {
+					button
+						.setButtonText("Delete Store")
+						.setWarning()
+						.onClick(async () => {
+							if (confirm("Are you sure you want to delete the RAG store? This will remove all indexed files.")) {
+								await this.deleteRAGStore();
+							}
+						});
+				});
+
+			// Store info
+			if (this.plugin.ragService?.getFileSearchStoreName()) {
+				const storeInfo = containerEl.createDiv("rag-store-info");
+				storeInfo.style.padding = "10px";
+				storeInfo.style.backgroundColor = "var(--background-primary-alt)";
+				storeInfo.style.borderRadius = "8px";
+				storeInfo.style.fontSize = "12px";
+				storeInfo.style.marginTop = "10px";
+
+				storeInfo.createEl("p", {
+					text: `📦 Store Name: ${this.plugin.ragService.getFileSearchStoreName()}`
+				});
+			}
+		}
 	}
 
 	private displayCustomPrompts(containerEl: HTMLElement): void {
@@ -2641,5 +2948,75 @@ class GeminiChatbotSettingTab extends PluginSettingTab {
 		await this.plugin.saveSettings();
 		this.plugin.registerCustomPromptCommands();
 		this.display(); // Refresh the settings display
+	}
+
+	// RAG helper methods
+	private async syncVaultWithProgress(): Promise<void> {
+		if (!this.plugin.ragService) {
+			new Notice("RAG service not initialized");
+			return;
+		}
+
+		// Create progress notice
+		const notice = new Notice("Starting vault sync...", 0);
+
+		try {
+			// Initialize store if needed
+			if (!this.plugin.ragService.getFileSearchStoreName()) {
+				notice.setMessage("Creating File Search store...");
+				await this.plugin.ragService.initializeStore();
+				this.plugin.settings.ragStoreName = this.plugin.ragService.getFileSearchStoreName();
+				await this.plugin.saveSettings();
+			}
+
+			// Sync vault
+			const result = await this.plugin.ragService.syncVault(
+				this.plugin.settings.ragFolderPath === "/" ? undefined : this.plugin.settings.ragFolderPath,
+				(progress) => {
+					notice.setMessage(
+						`Syncing: ${progress.processed}/${progress.total} - ${progress.current}`
+					);
+				}
+			);
+
+			// Save synced files metadata
+			this.plugin.settings.ragSyncedFiles = this.plugin.ragService.getSyncedFilesMetadata();
+			await this.plugin.saveSettings();
+
+			notice.hide();
+			new Notice(
+				`Sync complete! ✅ ${result.success} uploaded, ⏭️ ${result.skipped} skipped, ❌ ${result.failed} failed`
+			);
+
+			// Refresh settings display
+			this.display();
+		} catch (error) {
+			notice.hide();
+			console.error("Sync error:", error);
+			new Notice(`Sync failed: ${error.message}`);
+		}
+	}
+
+	private async deleteRAGStore(): Promise<void> {
+		if (!this.plugin.ragService || !this.plugin.ragService.getFileSearchStoreName()) {
+			new Notice("No RAG store to delete");
+			return;
+		}
+
+		try {
+			const storeName = this.plugin.ragService.getFileSearchStoreName()!;
+			await this.plugin.ragService.deleteStore(storeName);
+
+			// Clear settings
+			this.plugin.settings.ragStoreName = null;
+			this.plugin.settings.ragSyncedFiles = {};
+			await this.plugin.saveSettings();
+
+			new Notice("RAG store deleted successfully");
+			this.display();
+		} catch (error) {
+			console.error("Delete store error:", error);
+			new Notice(`Failed to delete store: ${error.message}`);
+		}
 	}
 }
