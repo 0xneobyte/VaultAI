@@ -1595,9 +1595,6 @@ ${surroundingLines.join('\n')}
 	}
 
 	private formatCitations(groundingMetadata: any): string {
-		// Debug: Log the full structure
-		console.log("Grounding Metadata:", JSON.stringify(groundingMetadata, null, 2));
-
 		if (!groundingMetadata || !groundingMetadata.groundingChunks) {
 			return "";
 		}
@@ -1607,55 +1604,66 @@ ${surroundingLines.join('\n')}
 			return "";
 		}
 
-		// Extract unique file sources
-		const sources = new Set<string>();
-		chunks.forEach((chunk: any, index: number) => {
-			console.log(`Chunk ${index}:`, JSON.stringify(chunk, null, 2));
+		// Extract information from chunks
+		const obsidianLinks = new Set<string>();
+		const hashtags = new Set<string>();
+		const textPreviews = new Set<string>();
 
+		chunks.forEach((chunk: any) => {
 			if (chunk.web) {
-				// Skip web sources for now, we're only showing vault sources
-				return;
+				return; // Skip web sources
 			}
 
-			// Try multiple possible paths to find the file name
-			let fileName = null;
+			const text = chunk.retrievedContext?.text || "";
 
-			if (chunk.retrievedContext) {
-				fileName = chunk.retrievedContext.title ||
-				          chunk.retrievedContext.uri ||
-				          chunk.retrievedContext.fileName ||
-				          chunk.retrievedContext.name;
+			// Extract Obsidian-style [[links]]
+			const linkMatches = text.matchAll(/\[\[([^\]]+)\]\]/g);
+			for (const match of linkMatches) {
+				obsidianLinks.add(match[1]);
 			}
 
-			// Try other possible locations
-			if (!fileName && chunk.grounding) {
-				fileName = chunk.grounding.title || chunk.grounding.uri;
+			// Extract hashtags
+			const hashtagMatches = text.matchAll(/#[\w-]+/g);
+			for (const match of hashtagMatches) {
+				hashtags.add(match[0]);
 			}
 
-			if (!fileName && chunk.title) {
-				fileName = chunk.title;
-			}
-
-			if (!fileName && chunk.uri) {
-				fileName = chunk.uri;
-			}
-
-			if (fileName) {
-				sources.add(fileName);
-			} else {
-				console.warn("Could not extract file name from chunk:", chunk);
-				sources.add("Unknown source");
+			// If we have no links, add a preview of the text
+			if (obsidianLinks.size === 0) {
+				const preview = text.trim().substring(0, 80).replace(/\n/g, ' ');
+				if (preview) {
+					textPreviews.add(`"${preview}..."`);
+				}
 			}
 		});
 
-		if (sources.size === 0) {
-			return "";
+		// Build sources list prioritizing links, then hashtags, then text previews
+		const allSources: string[] = [];
+
+		if (obsidianLinks.size > 0) {
+			allSources.push(...Array.from(obsidianLinks).map(link => `📄 [[${link}]]`));
+		}
+
+		if (hashtags.size > 0 && obsidianLinks.size > 0) {
+			// Show hashtags alongside links as additional context
+			allSources.push(...Array.from(hashtags).map(tag => `🏷️ ${tag}`));
+		}
+
+		if (allSources.length === 0 && textPreviews.size > 0) {
+			// Fallback to text previews if no structured info found
+			allSources.push(...Array.from(textPreviews).slice(0, 3)); // Limit to 3 previews
+		}
+
+		if (allSources.length === 0) {
+			// Last resort: just say how many chunks
+			return `\n\n---\n*Response grounded in ${chunks.length} source${chunks.length !== 1 ? 's' : ''} from your vault*`;
 		}
 
 		// Create collapsible citation section
-		const sourcesList = Array.from(sources).map(source => `  - ${source}`).join('\n');
+		const sourcesList = allSources.map(source => `  ${source}`).join('\n');
+		const count = obsidianLinks.size || textPreviews.size;
 
-		return `\n\n---\n<details>\n<summary>📚 Sources from your vault (${sources.size})</summary>\n\n${sourcesList}\n</details>`;
+		return `\n\n---\n<details>\n<summary>📚 Sources from your vault (${count} reference${count !== 1 ? 's' : ''})</summary>\n\n${sourcesList}\n</details>`;
 	}
 
 	onunload() {
