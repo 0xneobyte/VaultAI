@@ -1605,6 +1605,7 @@ ${surroundingLines.join('\n')}
 		}
 
 		// Extract information from chunks
+		const fileNames = new Set<string>();
 		const obsidianLinks = new Set<string>();
 		const hashtags = new Set<string>();
 		const textPreviews = new Set<string>();
@@ -1614,7 +1615,26 @@ ${surroundingLines.join('\n')}
 				return; // Skip web sources
 			}
 
-			const text = chunk.retrievedContext?.text || "";
+			const context = chunk.retrievedContext;
+
+			// Debug: Log all available keys in retrievedContext
+			console.log("Retrieved Context Keys:", Object.keys(context || {}));
+
+			// Try multiple possible locations for file name/metadata
+			const fileName = context?.displayName ||
+			               context?.title ||
+			               context?.name ||
+			               context?.uri ||
+			               context?.metadata?.displayName ||
+			               context?.metadata?.path ||
+			               context?.customMetadata?.find?.((m: any) => m.key === "path")?.stringValue;
+
+			if (fileName) {
+				console.log("Found file name:", fileName);
+				fileNames.add(fileName);
+			}
+
+			const text = context?.text || "";
 
 			// Extract Obsidian-style [[links]]
 			const linkMatches = text.matchAll(/\[\[([^\]]+)\]\]/g);
@@ -1628,8 +1648,8 @@ ${surroundingLines.join('\n')}
 				hashtags.add(match[0]);
 			}
 
-			// If we have no links, add a preview of the text
-			if (obsidianLinks.size === 0) {
+			// If we have no links or file names, add a preview of the text
+			if (obsidianLinks.size === 0 && fileNames.size === 0) {
 				const preview = text.trim().substring(0, 80).replace(/\n/g, ' ');
 				if (preview) {
 					textPreviews.add(`"${preview}..."`);
@@ -1637,15 +1657,19 @@ ${surroundingLines.join('\n')}
 			}
 		});
 
-		// Build sources list prioritizing links, then hashtags, then text previews
+		// Build sources list prioritizing file names, then links, then hashtags, then text previews
 		const allSources: string[] = [];
 
-		if (obsidianLinks.size > 0) {
+		if (fileNames.size > 0) {
+			console.log("Using file names for citations:", Array.from(fileNames));
+			allSources.push(...Array.from(fileNames).map(name => `📄 ${name}`));
+		} else if (obsidianLinks.size > 0) {
+			console.log("Using Obsidian links for citations:", Array.from(obsidianLinks));
 			allSources.push(...Array.from(obsidianLinks).map(link => `📄 [[${link}]]`));
 		}
 
-		if (hashtags.size > 0 && obsidianLinks.size > 0) {
-			// Show hashtags alongside links as additional context
+		if (hashtags.size > 0 && (obsidianLinks.size > 0 || fileNames.size > 0)) {
+			// Show hashtags alongside links/files as additional context
 			allSources.push(...Array.from(hashtags).map(tag => `🏷️ ${tag}`));
 		}
 
@@ -1661,7 +1685,7 @@ ${surroundingLines.join('\n')}
 
 		// Create collapsible citation section
 		const sourcesList = allSources.map(source => `  ${source}`).join('\n');
-		const count = obsidianLinks.size || textPreviews.size;
+		const count = fileNames.size || obsidianLinks.size || textPreviews.size;
 
 		return `\n\n---\n<details>\n<summary>📚 Sources from your vault (${count} reference${count !== 1 ? 's' : ''})</summary>\n\n${sourcesList}\n</details>`;
 	}
