@@ -1357,3 +1357,20 @@
 	width: var(--dynamic-width, 380px);
 	height: var(--dynamic-height, 590px);
 }
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+	.gemini-chat-container {
+		bottom: 10px !important;
+		right: 10px !important;
+		left: 10px !important;
+		width: calc(100% - 20px) !important;
+		max-width: calc(100% - 20px) !important;
+		height: 500px;
+		max-height: calc(100vh - 20px);
+	}
+
+	.input-actions {
+		flex-wrap: wrap;
+	}
+}
