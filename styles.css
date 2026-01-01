@@ -309,7 +309,7 @@
 .actions-menu-dropdown {
 	position: absolute;
 	bottom: 100%;
-	left: 0;
+	right: 0;
 	margin-bottom: 8px;
 	background: var(--background-primary);
 	border: 1px solid var(--background-modifier-border);
