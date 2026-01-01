@@ -1089,23 +1089,55 @@ export default class GeminiChatbotPlugin extends Plugin {
 		insertButton.textContent = "📍";
 		insertButton.title = "Insert AI response at cursor position";
 
-		// RAG mode toggle button
-		const ragButton = document.createElement("button");
-		ragButton.addClass("rag-button");
-		ragButton.textContent = "🧠";
-		ragButton.title = "Toggle RAG mode (search entire vault)";
+		// Mode selector dropdown
+		const modeContainer = document.createElement("div");
+		modeContainer.addClass("mode-selector-container");
 
-		// Web search mode toggle button
-		const webSearchButton = document.createElement("button");
-		webSearchButton.addClass("web-search-button");
-		webSearchButton.textContent = "🌐";
-		webSearchButton.title = "Toggle Web Search mode (search the web for up-to-date information)";
+		const modeButton = document.createElement("button");
+		modeButton.addClass("mode-selector-button");
+		modeButton.textContent = "💬";
+		modeButton.title = "Select chat mode";
+
+		const modeDropdown = document.createElement("div");
+		modeDropdown.addClass("mode-dropdown");
+		modeDropdown.style.display = "none";
+
+		const modes = [
+			{ id: "normal", label: "Normal", icon: "💬", description: "Standard chat" },
+			{ id: "rag", label: "RAG", icon: "🧠", description: "Search vault" },
+			{ id: "web", label: "Web Search", icon: "🌐", description: "Search web" }
+		];
+
+		modes.forEach(mode => {
+			const option = document.createElement("div");
+			option.addClass("mode-option");
+			option.setAttribute("data-mode", mode.id);
+
+			const iconSpan = document.createElement("span");
+			iconSpan.addClass("mode-icon");
+			iconSpan.textContent = mode.icon;
+
+			const labelSpan = document.createElement("span");
+			labelSpan.addClass("mode-label");
+			labelSpan.textContent = mode.label;
+
+			const descSpan = document.createElement("span");
+			descSpan.addClass("mode-description");
+			descSpan.textContent = mode.description;
+
+			option.appendChild(iconSpan);
+			option.appendChild(labelSpan);
+			option.appendChild(descSpan);
+			modeDropdown.appendChild(option);
+		});
+
+		modeContainer.appendChild(modeButton);
+		modeContainer.appendChild(modeDropdown);
 
 		actionsContainer.appendChild(promptsButton);
 		actionsContainer.appendChild(mentionButton);
 		actionsContainer.appendChild(insertButton);
-		actionsContainer.appendChild(ragButton);
-		actionsContainer.appendChild(webSearchButton);
+		actionsContainer.appendChild(modeContainer);
 		actionsContainer.appendChild(sendButton);
 
 		inputWrapper.appendChild(textarea);
@@ -1124,8 +1156,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 		const sendButton = this.chatContainer.querySelector(".send-button");
 		const promptsButton = this.chatContainer.querySelector(".prompts-button");
 		const insertButton = this.chatContainer.querySelector(".insert-button");
-		const ragButton = this.chatContainer.querySelector(".rag-button");
-		const webSearchButton = this.chatContainer.querySelector(".web-search-button");
+		const modeButton = this.chatContainer.querySelector(".mode-selector-button");
+		const modeDropdown = this.chatContainer.querySelector(".mode-dropdown");
+		const modeOptions = this.chatContainer.querySelectorAll(".mode-option");
 		const inputField = this.chatContainer.querySelector(
 			".chat-input"
 		) as HTMLTextAreaElement;
@@ -1142,12 +1175,27 @@ export default class GeminiChatbotPlugin extends Plugin {
 			this.toggleInsertMode();
 		});
 
-		ragButton?.addEventListener("click", () => {
-			this.toggleRAGMode();
+		// Mode selector dropdown toggle
+		modeButton?.addEventListener("click", (e) => {
+			e.stopPropagation();
+			const isVisible = (modeDropdown as HTMLElement)?.style.display === "block";
+			(modeDropdown as HTMLElement).style.display = isVisible ? "none" : "block";
 		});
 
-		webSearchButton?.addEventListener("click", () => {
-			this.toggleWebSearchMode();
+		// Mode option selection
+		modeOptions.forEach(option => {
+			option.addEventListener("click", () => {
+				const mode = option.getAttribute("data-mode");
+				this.setMode(mode as "normal" | "rag" | "web");
+				(modeDropdown as HTMLElement).style.display = "none";
+			});
+		});
+
+		// Close dropdown when clicking outside
+		document.addEventListener("click", (e) => {
+			if (modeDropdown && !(e.target as Element).closest(".mode-selector-container")) {
+				(modeDropdown as HTMLElement).style.display = "none";
+			}
 		});
 
 		sendButton?.addEventListener("click", () => {
@@ -1586,84 +1634,63 @@ ${surroundingLines.join('\n')}
 		new Notice(this.insertMode ? "Insert mode ON" : "Insert mode OFF");
 	}
 
-	private toggleRAGMode(): void {
-		// Check if RAG is enabled and configured
-		if (!this.settings.ragEnabled) {
-			new Notice("RAG is not enabled. Enable it in Settings → VaultAI → RAG Settings");
-			return;
-		}
+	private setMode(mode: "normal" | "rag" | "web"): void {
+		// Check if RAG is enabled and configured when trying to enable it
+		if (mode === "rag") {
+			if (!this.settings.ragEnabled) {
+				new Notice("RAG is not enabled. Enable it in Settings → VaultAI → RAG Settings");
+				return;
+			}
 
-		if (!this.ragService || !this.ragService.getFileSearchStoreName()) {
-			new Notice("Please sync your vault first in Settings → VaultAI → RAG Settings");
-			return;
-		}
-
-		this.ragMode = !this.ragMode;
-
-		// If enabling RAG, disable web search mode (they're mutually exclusive)
-		if (this.ragMode && this.webSearchMode) {
-			this.webSearchMode = false;
-			const webSearchButton = this.chatContainer?.querySelector(".web-search-button") as HTMLElement;
-			if (webSearchButton) {
-				webSearchButton.textContent = "🌐";
-				webSearchButton.style.backgroundColor = "";
-				webSearchButton.style.color = "";
-				webSearchButton.title = "Toggle Web Search mode (search the web for up-to-date information)";
+			if (!this.ragService || !this.ragService.getFileSearchStoreName()) {
+				new Notice("Please sync your vault first in Settings → VaultAI → RAG Settings");
+				return;
 			}
 		}
 
-		const ragButton = this.chatContainer?.querySelector(".rag-button") as HTMLElement;
+		// Update mode states
+		this.ragMode = mode === "rag";
+		this.webSearchMode = mode === "web";
 
-		if (ragButton) {
-			if (this.ragMode) {
-				ragButton.textContent = "🧠✓";
-				ragButton.style.backgroundColor = "var(--interactive-accent)";
-				ragButton.style.color = "var(--text-on-accent)";
-				ragButton.title = "RAG mode ON - Searching entire vault";
+		// Update mode button UI
+		const modeButton = this.chatContainer?.querySelector(".mode-selector-button") as HTMLElement;
+		const modeOptions = this.chatContainer?.querySelectorAll(".mode-option");
+
+		if (modeButton) {
+			switch (mode) {
+				case "normal":
+					modeButton.textContent = "💬";
+					modeButton.style.backgroundColor = "";
+					modeButton.style.color = "";
+					modeButton.title = "Mode: Normal";
+					new Notice("Normal mode");
+					break;
+				case "rag":
+					modeButton.textContent = "🧠";
+					modeButton.style.backgroundColor = "var(--interactive-accent)";
+					modeButton.style.color = "var(--text-on-accent)";
+					modeButton.title = "Mode: RAG (Searching vault)";
+					new Notice("RAG mode ON - Searching entire vault");
+					break;
+				case "web":
+					modeButton.textContent = "🌐";
+					modeButton.style.backgroundColor = "var(--interactive-accent)";
+					modeButton.style.color = "var(--text-on-accent)";
+					modeButton.title = "Mode: Web Search";
+					new Notice("Web Search mode ON - Searching the web");
+					break;
+			}
+		}
+
+		// Update active state in dropdown options
+		modeOptions?.forEach(option => {
+			const optionMode = option.getAttribute("data-mode");
+			if (optionMode === mode) {
+				option.addClass("active");
 			} else {
-				ragButton.textContent = "🧠";
-				ragButton.style.backgroundColor = "";
-				ragButton.style.color = "";
-				ragButton.title = "Toggle RAG mode (search entire vault)";
+				option.removeClass("active");
 			}
-		}
-
-		new Notice(this.ragMode ? "RAG mode ON - Searching entire vault" : "RAG mode OFF");
-	}
-
-	private toggleWebSearchMode(): void {
-		// Toggle web search mode (no initialization needed, uses Gemini API directly)
-		this.webSearchMode = !this.webSearchMode;
-
-		// If enabling web search, disable RAG mode (they're mutually exclusive)
-		if (this.webSearchMode && this.ragMode) {
-			this.ragMode = false;
-			const ragButton = this.chatContainer?.querySelector(".rag-button") as HTMLElement;
-			if (ragButton) {
-				ragButton.textContent = "🧠";
-				ragButton.style.backgroundColor = "";
-				ragButton.style.color = "";
-				ragButton.title = "Toggle RAG mode (search entire vault)";
-			}
-		}
-
-		const webSearchButton = this.chatContainer?.querySelector(".web-search-button") as HTMLElement;
-
-		if (webSearchButton) {
-			if (this.webSearchMode) {
-				webSearchButton.textContent = "🌐✓";
-				webSearchButton.style.backgroundColor = "var(--interactive-accent)";
-				webSearchButton.style.color = "var(--text-on-accent)";
-				webSearchButton.title = "Web Search mode ON - Searching the web";
-			} else {
-				webSearchButton.textContent = "🌐";
-				webSearchButton.style.backgroundColor = "";
-				webSearchButton.style.color = "";
-				webSearchButton.title = "Toggle Web Search mode (search the web for up-to-date information)";
-			}
-		}
-
-		new Notice(this.webSearchMode ? "Web Search mode ON - Searching the web" : "Web Search mode OFF");
+		});
 	}
 
 	private formatCitations(groundingMetadata: any): string {
