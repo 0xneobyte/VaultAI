@@ -1,5 +1,5 @@
 import { App, Notice, Plugin, PluginSettingTab, Setting, MarkdownView, Editor } from "obsidian";
-import { GeminiService } from "./src/services/GeminiService";
+import { GeminiService, WebSearchResponse } from "./src/services/GeminiService";
 import { RAGService } from "./src/services/RAGService";
 import { LanguageSelectionModal } from "./src/modals/LanguageSelectionModal";
 import { MarkdownRenderer } from "obsidian";
@@ -77,6 +77,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 	// RAG mode toggle
 	private ragMode = false;
+
+	// Web search mode toggle
+	private webSearchMode = false;
 
 	// Rate limiting and context management
 	private lastApiCall = 0;
@@ -468,7 +471,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 		try {
 			this.lastApiCall = Date.now();
 
-			// Use RAG if enabled and available
+			// Use RAG, Web Search, or Normal mode
 			let response: string;
 			if (this.ragMode && this.ragService && this.ragService.getFileSearchStoreName()) {
 				const ragResult = await this.ragService.queryWithRAG(contextMessage || finalMessage);
@@ -485,6 +488,15 @@ export default class GeminiChatbotPlugin extends Plugin {
 					"RAG mode is enabled but your vault hasn't been synced yet. Please sync your vault in Settings → VaultAI → RAG Settings."
 				);
 				return;
+			} else if (this.webSearchMode) {
+				// Use web search mode
+				const webSearchResult: WebSearchResponse = await this.geminiService.sendMessageWithWebSearch(finalMessage);
+				response = webSearchResult.text;
+
+				// Add web search sources if available
+				if (webSearchResult.groundingMetadata) {
+					response += this.formatWebSearchSources(webSearchResult.groundingMetadata);
+				}
 			} else {
 				response = await this.geminiService.sendMessage(finalMessage);
 			}
@@ -1083,10 +1095,17 @@ export default class GeminiChatbotPlugin extends Plugin {
 		ragButton.textContent = "🧠";
 		ragButton.title = "Toggle RAG mode (search entire vault)";
 
+		// Web search mode toggle button
+		const webSearchButton = document.createElement("button");
+		webSearchButton.addClass("web-search-button");
+		webSearchButton.textContent = "🌐";
+		webSearchButton.title = "Toggle Web Search mode (search the web for up-to-date information)";
+
 		actionsContainer.appendChild(promptsButton);
 		actionsContainer.appendChild(mentionButton);
 		actionsContainer.appendChild(insertButton);
 		actionsContainer.appendChild(ragButton);
+		actionsContainer.appendChild(webSearchButton);
 		actionsContainer.appendChild(sendButton);
 
 		inputWrapper.appendChild(textarea);
@@ -1106,6 +1125,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 		const promptsButton = this.chatContainer.querySelector(".prompts-button");
 		const insertButton = this.chatContainer.querySelector(".insert-button");
 		const ragButton = this.chatContainer.querySelector(".rag-button");
+		const webSearchButton = this.chatContainer.querySelector(".web-search-button");
 		const inputField = this.chatContainer.querySelector(
 			".chat-input"
 		) as HTMLTextAreaElement;
@@ -1124,6 +1144,10 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 		ragButton?.addEventListener("click", () => {
 			this.toggleRAGMode();
+		});
+
+		webSearchButton?.addEventListener("click", () => {
+			this.toggleWebSearchMode();
 		});
 
 		sendButton?.addEventListener("click", () => {
@@ -1575,6 +1599,19 @@ ${surroundingLines.join('\n')}
 		}
 
 		this.ragMode = !this.ragMode;
+
+		// If enabling RAG, disable web search mode (they're mutually exclusive)
+		if (this.ragMode && this.webSearchMode) {
+			this.webSearchMode = false;
+			const webSearchButton = this.chatContainer?.querySelector(".web-search-button") as HTMLElement;
+			if (webSearchButton) {
+				webSearchButton.textContent = "🌐";
+				webSearchButton.style.backgroundColor = "";
+				webSearchButton.style.color = "";
+				webSearchButton.title = "Toggle Web Search mode (search the web for up-to-date information)";
+			}
+		}
+
 		const ragButton = this.chatContainer?.querySelector(".rag-button") as HTMLElement;
 
 		if (ragButton) {
@@ -1592,6 +1629,41 @@ ${surroundingLines.join('\n')}
 		}
 
 		new Notice(this.ragMode ? "RAG mode ON - Searching entire vault" : "RAG mode OFF");
+	}
+
+	private toggleWebSearchMode(): void {
+		// Toggle web search mode (no initialization needed, uses Gemini API directly)
+		this.webSearchMode = !this.webSearchMode;
+
+		// If enabling web search, disable RAG mode (they're mutually exclusive)
+		if (this.webSearchMode && this.ragMode) {
+			this.ragMode = false;
+			const ragButton = this.chatContainer?.querySelector(".rag-button") as HTMLElement;
+			if (ragButton) {
+				ragButton.textContent = "🧠";
+				ragButton.style.backgroundColor = "";
+				ragButton.style.color = "";
+				ragButton.title = "Toggle RAG mode (search entire vault)";
+			}
+		}
+
+		const webSearchButton = this.chatContainer?.querySelector(".web-search-button") as HTMLElement;
+
+		if (webSearchButton) {
+			if (this.webSearchMode) {
+				webSearchButton.textContent = "🌐✓";
+				webSearchButton.style.backgroundColor = "var(--interactive-accent)";
+				webSearchButton.style.color = "var(--text-on-accent)";
+				webSearchButton.title = "Web Search mode ON - Searching the web";
+			} else {
+				webSearchButton.textContent = "🌐";
+				webSearchButton.style.backgroundColor = "";
+				webSearchButton.style.color = "";
+				webSearchButton.title = "Toggle Web Search mode (search the web for up-to-date information)";
+			}
+		}
+
+		new Notice(this.webSearchMode ? "Web Search mode ON - Searching the web" : "Web Search mode OFF");
 	}
 
 	private formatCitations(groundingMetadata: any): string {
@@ -1688,6 +1760,41 @@ ${surroundingLines.join('\n')}
 		const count = fileNames.size || obsidianLinks.size || textPreviews.size;
 
 		return `\n\n---\n<details>\n<summary>📚 Sources from your vault (${count} reference${count !== 1 ? 's' : ''})</summary>\n\n${sourcesList}\n</details>`;
+	}
+
+	private formatWebSearchSources(groundingMetadata: any): string {
+		if (!groundingMetadata) {
+			return "";
+		}
+
+		const sources: string[] = [];
+
+		// Add search queries used
+		if (groundingMetadata.webSearchQueries && groundingMetadata.webSearchQueries.length > 0) {
+			const queries = groundingMetadata.webSearchQueries.join(", ");
+			sources.push(`🔍 **Search queries**: ${queries}`);
+		}
+
+		// Add web sources with clickable links
+		if (groundingMetadata.groundingChunks && groundingMetadata.groundingChunks.length > 0) {
+			const webSources = groundingMetadata.groundingChunks
+				.filter((chunk: any) => chunk.web)
+				.map((chunk: any, index: number) => {
+					const uri = chunk.web.uri;
+					const title = chunk.web.title || uri;
+					return `  ${index + 1}. [${title}](${uri})`;
+				});
+
+			if (webSources.length > 0) {
+				sources.push(`\n🌐 **Web sources**:\n${webSources.join('\n')}`);
+			}
+		}
+
+		if (sources.length === 0) {
+			return "\n\n---\n*Response generated with web search*";
+		}
+
+		return `\n\n---\n<details>\n<summary>🌐 Web Search Sources (${groundingMetadata.groundingChunks?.filter((c: any) => c.web).length || 0} result${(groundingMetadata.groundingChunks?.filter((c: any) => c.web).length || 0) !== 1 ? 's' : ''})</summary>\n\n${sources.join('\n\n')}\n</details>`;
 	}
 
 	onunload() {
