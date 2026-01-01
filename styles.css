@@ -228,6 +228,9 @@
 	padding: 16px;
 	background: var(--chat-background);
 	border-top: 1px solid var(--chat-border);
+	overflow: visible;
+	position: relative;
+	z-index: 100;
 }
 
 .chat-input-wrapper {
@@ -238,6 +241,7 @@
 	border: 1px solid var(--chat-border);
 	border-radius: 8px;
 	background-color: var(--chat-bot-bg);
+	overflow: visible;
 }
 
 .chat-input {
@@ -312,7 +316,7 @@
 	border-radius: 8px;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 	min-width: 200px;
-	z-index: 1001;
+	z-index: 10000;
 	overflow: hidden;
 }
 
@@ -387,7 +391,7 @@
 	border-radius: 8px;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 	min-width: 200px;
-	z-index: 1001;
+	z-index: 10000;
 	overflow: hidden;
 }
 
