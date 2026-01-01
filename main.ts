@@ -1067,27 +1067,55 @@ export default class GeminiChatbotPlugin extends Plugin {
 		const actionsContainer = document.createElement("div");
 		actionsContainer.addClass("input-actions");
 
-		// Custom prompts button
-		const promptsButton = document.createElement("button");
-		promptsButton.addClass("prompts-button");
-		promptsButton.textContent = "✨";
-		promptsButton.title = "Custom Prompts";
-
-		// Mention button
-		const mentionButton = document.createElement("button");
-		mentionButton.addClass("mention-button");
-		mentionButton.textContent = "@";
-
 		// Send button
 		const sendButton = document.createElement("button");
 		sendButton.addClass("send-button");
 		sendButton.textContent = "↑";
 
-		// Insert at cursor button
-		const insertButton = document.createElement("button");
-		insertButton.addClass("insert-button");
-		insertButton.textContent = "📍";
-		insertButton.title = "Insert AI response at cursor position";
+		// Actions dropdown (prompts, mention, insert)
+		const actionsMenuContainer = document.createElement("div");
+		actionsMenuContainer.addClass("actions-menu-container");
+
+		const actionsMenuButton = document.createElement("button");
+		actionsMenuButton.addClass("actions-menu-button");
+		actionsMenuButton.textContent = "✨";
+		actionsMenuButton.title = "Actions";
+
+		const actionsMenuDropdown = document.createElement("div");
+		actionsMenuDropdown.addClass("actions-menu-dropdown");
+		actionsMenuDropdown.style.display = "none";
+
+		const actions = [
+			{ id: "prompts", label: "Custom Prompts", icon: "✨", description: "Use saved prompts" },
+			{ id: "mention", label: "Mention File", icon: "@", description: "Reference a file" },
+			{ id: "insert", label: "Insert Mode", icon: "📍", description: "Insert at cursor" }
+		];
+
+		actions.forEach(action => {
+			const option = document.createElement("div");
+			option.addClass("actions-menu-option");
+			option.setAttribute("data-action", action.id);
+
+			const iconSpan = document.createElement("span");
+			iconSpan.addClass("action-icon");
+			iconSpan.textContent = action.icon;
+
+			const labelSpan = document.createElement("span");
+			labelSpan.addClass("action-label");
+			labelSpan.textContent = action.label;
+
+			const descSpan = document.createElement("span");
+			descSpan.addClass("action-description");
+			descSpan.textContent = action.description;
+
+			option.appendChild(iconSpan);
+			option.appendChild(labelSpan);
+			option.appendChild(descSpan);
+			actionsMenuDropdown.appendChild(option);
+		});
+
+		actionsMenuContainer.appendChild(actionsMenuButton);
+		actionsMenuContainer.appendChild(actionsMenuDropdown);
 
 		// Mode selector dropdown
 		const modeContainer = document.createElement("div");
@@ -1134,9 +1162,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 		modeContainer.appendChild(modeButton);
 		modeContainer.appendChild(modeDropdown);
 
-		actionsContainer.appendChild(promptsButton);
-		actionsContainer.appendChild(mentionButton);
-		actionsContainer.appendChild(insertButton);
+		actionsContainer.appendChild(actionsMenuContainer);
 		actionsContainer.appendChild(modeContainer);
 		actionsContainer.appendChild(sendButton);
 
@@ -1154,8 +1180,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 		});
 
 		const sendButton = this.chatContainer.querySelector(".send-button");
-		const promptsButton = this.chatContainer.querySelector(".prompts-button");
-		const insertButton = this.chatContainer.querySelector(".insert-button");
+		const actionsMenuButton = this.chatContainer.querySelector(".actions-menu-button");
+		const actionsMenuDropdown = this.chatContainer.querySelector(".actions-menu-dropdown");
+		const actionsMenuOptions = this.chatContainer.querySelectorAll(".actions-menu-option");
 		const modeButton = this.chatContainer.querySelector(".mode-selector-button");
 		const modeDropdown = this.chatContainer.querySelector(".mode-dropdown");
 		const modeOptions = this.chatContainer.querySelectorAll(".mode-option");
@@ -1167,12 +1194,35 @@ export default class GeminiChatbotPlugin extends Plugin {
 			".gemini-chat-messages"
 		);
 
-		promptsButton?.addEventListener("click", () => {
-			this.showCustomPromptsDropdown();
+		// Actions menu dropdown toggle
+		actionsMenuButton?.addEventListener("click", (e) => {
+			e.stopPropagation();
+			const isVisible = (actionsMenuDropdown as HTMLElement)?.style.display === "block";
+			(actionsMenuDropdown as HTMLElement).style.display = isVisible ? "none" : "block";
+			// Close mode dropdown if open
+			if (modeDropdown) {
+				(modeDropdown as HTMLElement).style.display = "none";
+			}
 		});
 
-		insertButton?.addEventListener("click", () => {
-			this.toggleInsertMode();
+		// Actions menu option selection
+		actionsMenuOptions.forEach(option => {
+			option.addEventListener("click", () => {
+				const action = option.getAttribute("data-action");
+				(actionsMenuDropdown as HTMLElement).style.display = "none";
+
+				switch (action) {
+					case "prompts":
+						this.showCustomPromptsDropdown();
+						break;
+					case "mention":
+						this.showFileSelectionModal();
+						break;
+					case "insert":
+						this.toggleInsertMode();
+						break;
+				}
+			});
 		});
 
 		// Mode selector dropdown toggle
@@ -1180,6 +1230,10 @@ export default class GeminiChatbotPlugin extends Plugin {
 			e.stopPropagation();
 			const isVisible = (modeDropdown as HTMLElement)?.style.display === "block";
 			(modeDropdown as HTMLElement).style.display = isVisible ? "none" : "block";
+			// Close actions menu if open
+			if (actionsMenuDropdown) {
+				(actionsMenuDropdown as HTMLElement).style.display = "none";
+			}
 		});
 
 		// Mode option selection
@@ -1191,10 +1245,13 @@ export default class GeminiChatbotPlugin extends Plugin {
 			});
 		});
 
-		// Close dropdown when clicking outside
+		// Close dropdowns when clicking outside
 		document.addEventListener("click", (e) => {
 			if (modeDropdown && !(e.target as Element).closest(".mode-selector-container")) {
 				(modeDropdown as HTMLElement).style.display = "none";
+			}
+			if (actionsMenuDropdown && !(e.target as Element).closest(".actions-menu-container")) {
+				(actionsMenuDropdown as HTMLElement).style.display = "none";
 			}
 		});
 
@@ -1261,13 +1318,6 @@ export default class GeminiChatbotPlugin extends Plugin {
 		const moreButton = this.chatContainer.querySelector(".more-button");
 		moreButton?.addEventListener("click", async (event) => {
 			this.showMoreOptionsMenu(event as MouseEvent);
-		});
-
-		// Add @ button handler
-		const mentionButton =
-			this.chatContainer.querySelector(".mention-button");
-		mentionButton?.addEventListener("click", () => {
-			this.showFileSelectionModal();
 		});
 	}
 
