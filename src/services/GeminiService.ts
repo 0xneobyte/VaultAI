@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI, DynamicRetrievalMode } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export interface GroundingMetadata {
     webSearchQueries?: string[];
@@ -35,16 +35,13 @@ export class GeminiService {
         this.model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash"});
 
         // Create a separate model instance for web search
+        // Note: gemini-2.5-flash uses 'googleSearch' tool (not 'googleSearchRetrieval')
+        // Using 'as any' because @google/generative-ai v0.24.1 types don't include the new googleSearch tool yet
         this.modelWithSearch = this.genAI.getGenerativeModel({
             model: "gemini-2.5-flash",
             tools: [{
-                googleSearchRetrieval: {
-                    dynamicRetrievalConfig: {
-                        mode: DynamicRetrievalMode.MODE_DYNAMIC,
-                        dynamicThreshold: 0.3,
-                    }
-                }
-            }]
+                googleSearch: {}
+            } as any]
         });
 
         this.startChat();
