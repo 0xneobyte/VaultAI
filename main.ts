@@ -1,5 +1,5 @@
 import { App, Notice, Plugin, PluginSettingTab, Setting, MarkdownView, Editor } from "obsidian";
-import { GeminiService } from "./src/services/GeminiService";
+import { GeminiService, WebSearchResponse } from "./src/services/GeminiService";
 import { RAGService } from "./src/services/RAGService";
 import { LanguageSelectionModal } from "./src/modals/LanguageSelectionModal";
 import { MarkdownRenderer } from "obsidian";
@@ -77,6 +77,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 	// RAG mode toggle
 	private ragMode = false;
+
+	// Web search mode toggle
+	private webSearchMode = false;
 
 	// Rate limiting and context management
 	private lastApiCall = 0;
@@ -468,7 +471,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 		try {
 			this.lastApiCall = Date.now();
 
-			// Use RAG if enabled and available
+			// Use RAG, Web Search, or Normal mode
 			let response: string;
 			if (this.ragMode && this.ragService && this.ragService.getFileSearchStoreName()) {
 				const ragResult = await this.ragService.queryWithRAG(contextMessage || finalMessage);
@@ -485,6 +488,15 @@ export default class GeminiChatbotPlugin extends Plugin {
 					"RAG mode is enabled but your vault hasn't been synced yet. Please sync your vault in Settings → VaultAI → RAG Settings."
 				);
 				return;
+			} else if (this.webSearchMode) {
+				// Use web search mode
+				const webSearchResult: WebSearchResponse = await this.geminiService.sendMessageWithWebSearch(finalMessage);
+				response = webSearchResult.text;
+
+				// Add web search sources if available
+				if (webSearchResult.groundingMetadata) {
+					response += this.formatWebSearchSources(webSearchResult.groundingMetadata);
+				}
 			} else {
 				response = await this.geminiService.sendMessage(finalMessage);
 			}
@@ -1055,38 +1067,103 @@ export default class GeminiChatbotPlugin extends Plugin {
 		const actionsContainer = document.createElement("div");
 		actionsContainer.addClass("input-actions");
 
-		// Custom prompts button
-		const promptsButton = document.createElement("button");
-		promptsButton.addClass("prompts-button");
-		promptsButton.textContent = "✨";
-		promptsButton.title = "Custom Prompts";
-
-		// Mention button
-		const mentionButton = document.createElement("button");
-		mentionButton.addClass("mention-button");
-		mentionButton.textContent = "@";
-
 		// Send button
 		const sendButton = document.createElement("button");
 		sendButton.addClass("send-button");
 		sendButton.textContent = "↑";
 
-		// Insert at cursor button
-		const insertButton = document.createElement("button");
-		insertButton.addClass("insert-button");
-		insertButton.textContent = "📍";
-		insertButton.title = "Insert AI response at cursor position";
+		// Actions dropdown (prompts, mention, insert)
+		const actionsMenuContainer = document.createElement("div");
+		actionsMenuContainer.addClass("actions-menu-container");
 
-		// RAG mode toggle button
-		const ragButton = document.createElement("button");
-		ragButton.addClass("rag-button");
-		ragButton.textContent = "🧠";
-		ragButton.title = "Toggle RAG mode (search entire vault)";
+		const actionsMenuButton = document.createElement("button");
+		actionsMenuButton.addClass("actions-menu-button");
+		actionsMenuButton.textContent = "✨";
+		actionsMenuButton.title = "Actions";
 
-		actionsContainer.appendChild(promptsButton);
-		actionsContainer.appendChild(mentionButton);
-		actionsContainer.appendChild(insertButton);
-		actionsContainer.appendChild(ragButton);
+		const actionsMenuDropdown = document.createElement("div");
+		actionsMenuDropdown.addClass("actions-menu-dropdown");
+		actionsMenuDropdown.style.display = "none";
+
+		const actions = [
+			{ id: "prompts", label: "Custom Prompts", icon: "✨", description: "Use saved prompts" },
+			{ id: "mention", label: "Mention File", icon: "@", description: "Reference a file" },
+			{ id: "insert", label: "Insert Mode", icon: "📍", description: "Insert at cursor" }
+		];
+
+		actions.forEach(action => {
+			const option = document.createElement("div");
+			option.addClass("actions-menu-option");
+			option.setAttribute("data-action", action.id);
+
+			const iconSpan = document.createElement("span");
+			iconSpan.addClass("action-icon");
+			iconSpan.textContent = action.icon;
+
+			const labelSpan = document.createElement("span");
+			labelSpan.addClass("action-label");
+			labelSpan.textContent = action.label;
+
+			const descSpan = document.createElement("span");
+			descSpan.addClass("action-description");
+			descSpan.textContent = action.description;
+
+			option.appendChild(iconSpan);
+			option.appendChild(labelSpan);
+			option.appendChild(descSpan);
+			actionsMenuDropdown.appendChild(option);
+		});
+
+		actionsMenuContainer.appendChild(actionsMenuButton);
+		actionsMenuContainer.appendChild(actionsMenuDropdown);
+
+		// Mode selector dropdown
+		const modeContainer = document.createElement("div");
+		modeContainer.addClass("mode-selector-container");
+
+		const modeButton = document.createElement("button");
+		modeButton.addClass("mode-selector-button");
+		modeButton.textContent = "💬";
+		modeButton.title = "Select chat mode";
+
+		const modeDropdown = document.createElement("div");
+		modeDropdown.addClass("mode-dropdown");
+		modeDropdown.style.display = "none";
+
+		const modes = [
+			{ id: "normal", label: "Normal", icon: "💬", description: "Standard chat" },
+			{ id: "rag", label: "RAG", icon: "🧠", description: "Search vault" },
+			{ id: "web", label: "Web Search", icon: "🌐", description: "Search web" }
+		];
+
+		modes.forEach(mode => {
+			const option = document.createElement("div");
+			option.addClass("mode-option");
+			option.setAttribute("data-mode", mode.id);
+
+			const iconSpan = document.createElement("span");
+			iconSpan.addClass("mode-icon");
+			iconSpan.textContent = mode.icon;
+
+			const labelSpan = document.createElement("span");
+			labelSpan.addClass("mode-label");
+			labelSpan.textContent = mode.label;
+
+			const descSpan = document.createElement("span");
+			descSpan.addClass("mode-description");
+			descSpan.textContent = mode.description;
+
+			option.appendChild(iconSpan);
+			option.appendChild(labelSpan);
+			option.appendChild(descSpan);
+			modeDropdown.appendChild(option);
+		});
+
+		modeContainer.appendChild(modeButton);
+		modeContainer.appendChild(modeDropdown);
+
+		actionsContainer.appendChild(actionsMenuContainer);
+		actionsContainer.appendChild(modeContainer);
 		actionsContainer.appendChild(sendButton);
 
 		inputWrapper.appendChild(textarea);
@@ -1103,9 +1180,12 @@ export default class GeminiChatbotPlugin extends Plugin {
 		});
 
 		const sendButton = this.chatContainer.querySelector(".send-button");
-		const promptsButton = this.chatContainer.querySelector(".prompts-button");
-		const insertButton = this.chatContainer.querySelector(".insert-button");
-		const ragButton = this.chatContainer.querySelector(".rag-button");
+		const actionsMenuButton = this.chatContainer.querySelector(".actions-menu-button");
+		const actionsMenuDropdown = this.chatContainer.querySelector(".actions-menu-dropdown");
+		const actionsMenuOptions = this.chatContainer.querySelectorAll(".actions-menu-option");
+		const modeButton = this.chatContainer.querySelector(".mode-selector-button");
+		const modeDropdown = this.chatContainer.querySelector(".mode-dropdown");
+		const modeOptions = this.chatContainer.querySelectorAll(".mode-option");
 		const inputField = this.chatContainer.querySelector(
 			".chat-input"
 		) as HTMLTextAreaElement;
@@ -1114,16 +1194,65 @@ export default class GeminiChatbotPlugin extends Plugin {
 			".gemini-chat-messages"
 		);
 
-		promptsButton?.addEventListener("click", () => {
-			this.showCustomPromptsDropdown();
+		// Actions menu dropdown toggle
+		actionsMenuButton?.addEventListener("click", (e) => {
+			e.stopPropagation();
+			const isVisible = (actionsMenuDropdown as HTMLElement)?.style.display === "block";
+			(actionsMenuDropdown as HTMLElement).style.display = isVisible ? "none" : "block";
+			// Close mode dropdown if open
+			if (modeDropdown) {
+				(modeDropdown as HTMLElement).style.display = "none";
+			}
 		});
 
-		insertButton?.addEventListener("click", () => {
-			this.toggleInsertMode();
+		// Actions menu option selection
+		actionsMenuOptions.forEach(option => {
+			option.addEventListener("click", () => {
+				const action = option.getAttribute("data-action");
+				(actionsMenuDropdown as HTMLElement).style.display = "none";
+
+				switch (action) {
+					case "prompts":
+						this.showCustomPromptsDropdown();
+						break;
+					case "mention":
+						this.showFileSelectionModal();
+						break;
+					case "insert":
+						this.toggleInsertMode();
+						break;
+				}
+			});
 		});
 
-		ragButton?.addEventListener("click", () => {
-			this.toggleRAGMode();
+		// Mode selector dropdown toggle
+		modeButton?.addEventListener("click", (e) => {
+			e.stopPropagation();
+			const isVisible = (modeDropdown as HTMLElement)?.style.display === "block";
+			(modeDropdown as HTMLElement).style.display = isVisible ? "none" : "block";
+			// Close actions menu if open
+			if (actionsMenuDropdown) {
+				(actionsMenuDropdown as HTMLElement).style.display = "none";
+			}
+		});
+
+		// Mode option selection
+		modeOptions.forEach(option => {
+			option.addEventListener("click", () => {
+				const mode = option.getAttribute("data-mode");
+				this.setMode(mode as "normal" | "rag" | "web");
+				(modeDropdown as HTMLElement).style.display = "none";
+			});
+		});
+
+		// Close dropdowns when clicking outside
+		document.addEventListener("click", (e) => {
+			if (modeDropdown && !(e.target as Element).closest(".mode-selector-container")) {
+				(modeDropdown as HTMLElement).style.display = "none";
+			}
+			if (actionsMenuDropdown && !(e.target as Element).closest(".actions-menu-container")) {
+				(actionsMenuDropdown as HTMLElement).style.display = "none";
+			}
 		});
 
 		sendButton?.addEventListener("click", () => {
@@ -1189,13 +1318,6 @@ export default class GeminiChatbotPlugin extends Plugin {
 		const moreButton = this.chatContainer.querySelector(".more-button");
 		moreButton?.addEventListener("click", async (event) => {
 			this.showMoreOptionsMenu(event as MouseEvent);
-		});
-
-		// Add @ button handler
-		const mentionButton =
-			this.chatContainer.querySelector(".mention-button");
-		mentionButton?.addEventListener("click", () => {
-			this.showFileSelectionModal();
 		});
 	}
 
@@ -1562,36 +1684,63 @@ ${surroundingLines.join('\n')}
 		new Notice(this.insertMode ? "Insert mode ON" : "Insert mode OFF");
 	}
 
-	private toggleRAGMode(): void {
-		// Check if RAG is enabled and configured
-		if (!this.settings.ragEnabled) {
-			new Notice("RAG is not enabled. Enable it in Settings → VaultAI → RAG Settings");
-			return;
-		}
+	private setMode(mode: "normal" | "rag" | "web"): void {
+		// Check if RAG is enabled and configured when trying to enable it
+		if (mode === "rag") {
+			if (!this.settings.ragEnabled) {
+				new Notice("RAG is not enabled. Enable it in Settings → VaultAI → RAG Settings");
+				return;
+			}
 
-		if (!this.ragService || !this.ragService.getFileSearchStoreName()) {
-			new Notice("Please sync your vault first in Settings → VaultAI → RAG Settings");
-			return;
-		}
-
-		this.ragMode = !this.ragMode;
-		const ragButton = this.chatContainer?.querySelector(".rag-button") as HTMLElement;
-
-		if (ragButton) {
-			if (this.ragMode) {
-				ragButton.textContent = "🧠✓";
-				ragButton.style.backgroundColor = "var(--interactive-accent)";
-				ragButton.style.color = "var(--text-on-accent)";
-				ragButton.title = "RAG mode ON - Searching entire vault";
-			} else {
-				ragButton.textContent = "🧠";
-				ragButton.style.backgroundColor = "";
-				ragButton.style.color = "";
-				ragButton.title = "Toggle RAG mode (search entire vault)";
+			if (!this.ragService || !this.ragService.getFileSearchStoreName()) {
+				new Notice("Please sync your vault first in Settings → VaultAI → RAG Settings");
+				return;
 			}
 		}
 
-		new Notice(this.ragMode ? "RAG mode ON - Searching entire vault" : "RAG mode OFF");
+		// Update mode states
+		this.ragMode = mode === "rag";
+		this.webSearchMode = mode === "web";
+
+		// Update mode button UI
+		const modeButton = this.chatContainer?.querySelector(".mode-selector-button") as HTMLElement;
+		const modeOptions = this.chatContainer?.querySelectorAll(".mode-option");
+
+		if (modeButton) {
+			switch (mode) {
+				case "normal":
+					modeButton.textContent = "💬";
+					modeButton.style.backgroundColor = "";
+					modeButton.style.color = "";
+					modeButton.title = "Mode: Normal";
+					new Notice("Normal mode");
+					break;
+				case "rag":
+					modeButton.textContent = "🧠";
+					modeButton.style.backgroundColor = "var(--interactive-accent)";
+					modeButton.style.color = "var(--text-on-accent)";
+					modeButton.title = "Mode: RAG (Searching vault)";
+					new Notice("RAG mode ON - Searching entire vault");
+					break;
+				case "web":
+					modeButton.textContent = "🌐";
+					modeButton.style.backgroundColor = "var(--interactive-accent)";
+					modeButton.style.color = "var(--text-on-accent)";
+					modeButton.title = "Mode: Web Search";
+					new Notice("Web Search mode ON - Searching the web");
+					break;
+			}
+		}
+
+		// Update active state in dropdown options
+		modeOptions?.forEach(option => {
+			const optionMode = option.getAttribute("data-mode");
+			if (optionMode === mode) {
+				option.addClass("active");
+			} else {
+				option.removeClass("active");
+			}
+		});
 	}
 
 	private formatCitations(groundingMetadata: any): string {
@@ -1688,6 +1837,41 @@ ${surroundingLines.join('\n')}
 		const count = fileNames.size || obsidianLinks.size || textPreviews.size;
 
 		return `\n\n---\n<details>\n<summary>📚 Sources from your vault (${count} reference${count !== 1 ? 's' : ''})</summary>\n\n${sourcesList}\n</details>`;
+	}
+
+	private formatWebSearchSources(groundingMetadata: any): string {
+		if (!groundingMetadata) {
+			return "";
+		}
+
+		const sources: string[] = [];
+
+		// Add search queries used
+		if (groundingMetadata.webSearchQueries && groundingMetadata.webSearchQueries.length > 0) {
+			const queries = groundingMetadata.webSearchQueries.join(", ");
+			sources.push(`🔍 **Search queries**: ${queries}`);
+		}
+
+		// Add web sources with clickable links
+		if (groundingMetadata.groundingChunks && groundingMetadata.groundingChunks.length > 0) {
+			const webSources = groundingMetadata.groundingChunks
+				.filter((chunk: any) => chunk.web)
+				.map((chunk: any, index: number) => {
+					const uri = chunk.web.uri;
+					const title = chunk.web.title || uri;
+					return `  ${index + 1}. [${title}](${uri})`;
+				});
+
+			if (webSources.length > 0) {
+				sources.push(`\n🌐 **Web sources**:\n${webSources.join('\n')}`);
+			}
+		}
+
+		if (sources.length === 0) {
+			return "\n\n---\n*Response generated with web search*";
+		}
+
+		return `\n\n---\n<details>\n<summary>🌐 Web Search Sources (${groundingMetadata.groundingChunks?.filter((c: any) => c.web).length || 0} result${(groundingMetadata.groundingChunks?.filter((c: any) => c.web).length || 0) !== 1 ? 's' : ''})</summary>\n\n${sources.join('\n\n')}\n</details>`;
 	}
 
 	onunload() {

@@ -1,7 +1,30 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+export interface GroundingMetadata {
+    webSearchQueries?: string[];
+    groundingChunks?: Array<{
+        web?: {
+            uri: string;
+            title?: string;
+        };
+    }>;
+    groundingSupports?: Array<{
+        segment?: {
+            startIndex?: number;
+            endIndex?: number;
+        };
+        groundingChunkIndices?: number[];
+    }>;
+}
+
+export interface WebSearchResponse {
+    text: string;
+    groundingMetadata?: GroundingMetadata;
+}
+
 export class GeminiService {
     private model: any;
+    private modelWithSearch: any;
     private chat: any;
     private genAI: GoogleGenerativeAI;
     private apiKey: string;
@@ -9,7 +32,18 @@ export class GeminiService {
     constructor(apiKey: string) {
         this.apiKey = apiKey;
         this.genAI = new GoogleGenerativeAI(apiKey);
-        this.model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp"});
+        this.model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash"});
+
+        // Create a separate model instance for web search
+        // Note: gemini-2.5-flash uses 'googleSearch' tool (not 'googleSearchRetrieval')
+        // Using 'as any' because @google/generative-ai v0.24.1 types don't include the new googleSearch tool yet
+        this.modelWithSearch = this.genAI.getGenerativeModel({
+            model: "gemini-2.5-flash",
+            tools: [{
+                googleSearch: {}
+            } as any]
+        });
+
         this.startChat();
     }
 
@@ -30,6 +64,21 @@ export class GeminiService {
             return response.text();
         } catch (error) {
             console.error('Error sending message to Gemini:', error);
+            throw error;
+        }
+    }
+
+    async sendMessageWithWebSearch(message: string): Promise<WebSearchResponse> {
+        try {
+            const result = await this.modelWithSearch.generateContent(message);
+            const response = await result.response;
+
+            return {
+                text: response.text(),
+                groundingMetadata: response.candidates?.[0]?.groundingMetadata
+            };
+        } catch (error) {
+            console.error('Error sending message to Gemini with web search:', error);
             throw error;
         }
     }
