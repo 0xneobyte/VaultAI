@@ -32,11 +32,11 @@ export class GeminiService {
     constructor(apiKey: string) {
         this.apiKey = apiKey;
         this.genAI = new GoogleGenerativeAI(apiKey);
-        this.model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp"});
+        this.model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash"});
 
         // Create a separate model instance for web search
         this.modelWithSearch = this.genAI.getGenerativeModel({
-            model: "gemini-2.0-flash-exp",
+            model: "gemini-2.5-flash",
             tools: [{
                 googleSearchRetrieval: {
                     dynamicRetrievalConfig: {
