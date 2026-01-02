@@ -1232,6 +1232,14 @@
 	background-color: var(--chat-hover);
 }
 
+/* Mobile-specific styles for floating chat icon */
+@media (max-width: 768px) {
+	.gemini-chat-icon {
+		bottom: 100px !important;
+		right: 15px !important;
+	}
+}
+
 /* Load Recent Chats Animation */
 @keyframes fadeIn {
 	from {
