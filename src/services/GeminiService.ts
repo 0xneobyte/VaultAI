@@ -22,23 +22,51 @@ export interface WebSearchResponse {
     groundingMetadata?: GroundingMetadata;
 }
 
+export interface ModelConfig {
+    modelName: string;
+    temperature: number;
+    topK: number;
+    topP: number;
+    maxOutputTokens: number;
+}
+
 export class GeminiService {
     private model: any;
     private modelWithSearch: any;
     private chat: any;
     private genAI: GoogleGenerativeAI;
     private apiKey: string;
+    private config: ModelConfig;
 
-    constructor(apiKey: string) {
+    constructor(apiKey: string, config?: ModelConfig) {
         this.apiKey = apiKey;
+        this.config = config || {
+            modelName: "gemini-2.0-flash-exp",
+            temperature: 1.0,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 8192
+        };
+        
         this.genAI = new GoogleGenerativeAI(apiKey);
-        this.model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash"});
+        
+        const generationConfig = {
+            temperature: this.config.temperature,
+            topK: this.config.topK,
+            topP: this.config.topP,
+            maxOutputTokens: this.config.maxOutputTokens,
+        };
+        
+        this.model = this.genAI.getGenerativeModel({ 
+            model: this.config.modelName,
+            generationConfig
+        });
 
         // Create a separate model instance for web search
-        // Note: gemini-2.5-flash uses 'googleSearch' tool (not 'googleSearchRetrieval')
         // Using 'as any' because @google/generative-ai v0.24.1 types don't include the new googleSearch tool yet
         this.modelWithSearch = this.genAI.getGenerativeModel({
-            model: "gemini-2.5-flash",
+            model: this.config.modelName,
+            generationConfig,
             tools: [{
                 googleSearch: {}
             } as any]
@@ -51,7 +79,10 @@ export class GeminiService {
         this.chat = this.model.startChat({
             history: [],
             generationConfig: {
-                maxOutputTokens: 2000,
+                temperature: this.config.temperature,
+                topK: this.config.topK,
+                topP: this.config.topP,
+                maxOutputTokens: this.config.maxOutputTokens,
             },
         });
     }
