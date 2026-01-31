@@ -14,7 +14,6 @@ Transform your note-taking with an intelligent AI writing assistant powered by G
 ## Key Features
 
 -   **🧠 RAG (Retrieval Augmented Generation)** - Search across your entire vault with AI-powered semantic search using Google's Gemini File Search API. Ask questions and get answers grounded in your notes with citations
--   **⚙️ Flexible Model Configuration** - Choose your Gemini model and fine-tune parameters like temperature, top-k, top-p, and max tokens for optimal results
 -   **Deep Editor Integration** - AI responses insert directly at your cursor position with real-time context awareness
 -   **Custom Prompts System** - Create reusable prompts with smart placeholders for repeated workflows
 -   **Keyboard Shortcuts** - Access all features via hotkeys and Command Palette integration
@@ -56,44 +55,6 @@ VaultAI indexes your vault and uses semantic search to find relevant notes when 
 - **Progress Tracking** - Real-time sync status updates
 
 > **Note**: Inspired by [Discussion #22](https://github.com/0xneobyte/VaultAI/discussions/22) - turning your vault into something like Google Notebook LM!
-
-## ⚙️ Model Configuration
-
-Customize the AI behavior to match your needs! VaultAI supports full configuration of Gemini model parameters.
-
-### Available Settings
-Configure these options in **Settings → VaultAI → Model Configuration**:
-
-1. **Model Name** - Choose which Gemini model to use:
-   - `gemini-2.0-flash-exp` (default) - Latest experimental flash model
-   - `gemini-1.5-pro` - Most capable model for complex tasks
-   - `gemini-1.5-flash` - Fastest model for quick responses
-   - Any other Gemini model available in your region
-
-2. **Temperature** (0.0 - 2.0, default: 1.0)
-   - Controls creativity and randomness in responses
-   - Lower values (0.0-0.5): More focused, deterministic outputs
-   - Higher values (1.5-2.0): More creative, varied outputs
-
-3. **Top K** (1 - 100, default: 40)
-   - Limits token selection to the K most likely candidates
-   - Lower values: More focused, predictable responses
-   - Higher values: More diverse language choices
-
-4. **Top P** (0.0 - 1.0, default: 0.95)
-   - Nucleus sampling threshold
-   - Lower values: More conservative word choices
-   - Higher values: More diverse vocabulary
-
-5. **Max Output Tokens** (100 - 32768, default: 8192)
-   - Maximum length of AI responses
-   - Adjust based on your needs (longer responses = more tokens)
-
-### Quick Tips
-- Use **lower temperature** (0.3-0.5) for factual tasks, summarization, or code
-- Use **higher temperature** (1.2-1.8) for creative writing or brainstorming
-- The settings apply to all new conversations and features (chat, RAG, web search)
-- Each setting has a reset button to restore defaults
 
 ## Documentation
 
