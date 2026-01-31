@@ -14,6 +14,7 @@ Transform your note-taking with an intelligent AI writing assistant powered by G
 ## Key Features
 
 -   **🧠 RAG (Retrieval Augmented Generation)** - Search across your entire vault with AI-powered semantic search using Google's Gemini File Search API. Ask questions and get answers grounded in your notes with citations
+-   **⚙️ Model Configuration** - Fine-tune AI responses with customizable temperature, top-K, top-P, and token limits ([Configuration Guide](../../wiki/Model-Configuration))
 -   **Deep Editor Integration** - AI responses insert directly at your cursor position with real-time context awareness
 -   **Custom Prompts System** - Create reusable prompts with smart placeholders for repeated workflows
 -   **Keyboard Shortcuts** - Access all features via hotkeys and Command Palette integration
