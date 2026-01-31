@@ -38,6 +38,12 @@ interface GeminiChatbotSettings {
 	ragFolderPath: string;
 	ragStoreName: string | null;
 	ragSyncedFiles: Record<string, any>;
+	// Model configuration
+	modelName: string;
+	temperature: number;
+	topK: number;
+	topP: number;
+	maxOutputTokens: number;
 }
 
 // Default plugin settings
@@ -52,6 +58,12 @@ const DEFAULT_SETTINGS: GeminiChatbotSettings = {
 	ragFolderPath: "/",
 	ragStoreName: null,
 	ragSyncedFiles: {},
+	// Model configuration defaults
+	modelName: "gemini-2.0-flash-exp",
+	temperature: 1.0,
+	topK: 40,
+	topP: 0.95,
+	maxOutputTokens: 8192,
 };
 
 export default class GeminiChatbotPlugin extends Plugin {
@@ -194,7 +206,14 @@ export default class GeminiChatbotPlugin extends Plugin {
 		try {
 			if (this.settings.apiKey) {
 				const decryptedKey = this.decryptApiKey(this.settings.apiKey);
-				this.geminiService = new GeminiService(decryptedKey);
+				const modelConfig = {
+					modelName: this.settings.modelName,
+					temperature: this.settings.temperature,
+					topK: this.settings.topK,
+					topP: this.settings.topP,
+					maxOutputTokens: this.settings.maxOutputTokens
+				};
+				this.geminiService = new GeminiService(decryptedKey, modelConfig);
 
 				// Initialize RAG service if enabled
 				if (this.settings.ragEnabled) {
@@ -474,7 +493,10 @@ export default class GeminiChatbotPlugin extends Plugin {
 			// Use RAG, Web Search, or Normal mode
 			let response: string;
 			if (this.ragMode && this.ragService && this.ragService.getFileSearchStoreName()) {
-				const ragResult = await this.ragService.queryWithRAG(contextMessage || finalMessage);
+				const ragResult = await this.ragService.queryWithRAG(
+					contextMessage || finalMessage,
+					this.settings.modelName
+				);
 				response = ragResult.text;
 
 				// Add citation info if available
@@ -2894,6 +2916,142 @@ class GeminiChatbotSettingTab extends PluginSettingTab {
 					text.inputEl.type =
 						text.inputEl.type === "password" ? "text" : "password";
 				});
+			});
+
+		// Model Configuration Section
+		containerEl.createEl("h3", { text: "Model Configuration" });
+		
+		const modelConfigDesc = containerEl.createEl("p", {
+			text: "Configure the Gemini model and generation parameters. Changes will apply to new conversations."
+		});
+		modelConfigDesc.style.marginBottom = "20px";
+		modelConfigDesc.style.color = "var(--text-muted)";
+
+		// Model name setting
+		new Setting(containerEl)
+			.setName("Model Name")
+			.setDesc("The Gemini model to use (e.g., gemini-2.0-flash-exp, gemini-1.5-pro, gemini-1.5-flash)")
+			.addText((text) => {
+				text
+					.setPlaceholder("gemini-2.0-flash-exp")
+					.setValue(this.plugin.settings.modelName)
+					.onChange(async (value) => {
+						this.plugin.settings.modelName = value || "gemini-2.0-flash-exp";
+						await this.plugin.saveSettings();
+						this.plugin.initializeGeminiService();
+					});
+			});
+
+		// Temperature setting
+		new Setting(containerEl)
+			.setName("Temperature")
+			.setDesc("Controls randomness in responses (0.0-2.0). Higher values make output more creative, lower values more focused.")
+			.addSlider((slider) => {
+				slider
+					.setLimits(0, 2, 0.1)
+					.setValue(this.plugin.settings.temperature)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						this.plugin.settings.temperature = value;
+						await this.plugin.saveSettings();
+						this.plugin.initializeGeminiService();
+					});
+			})
+			.addExtraButton((button) => {
+				button
+					.setIcon("reset")
+					.setTooltip("Reset to default (1.0)")
+					.onClick(async () => {
+						this.plugin.settings.temperature = 1.0;
+						await this.plugin.saveSettings();
+						this.plugin.initializeGeminiService();
+						this.display();
+					});
+			});
+
+		// Top K setting
+		new Setting(containerEl)
+			.setName("Top K")
+			.setDesc("Limits token selection to top K most likely tokens (1-100). Lower values make output more deterministic.")
+			.addText((text) => {
+				text
+					.setPlaceholder("40")
+					.setValue(String(this.plugin.settings.topK))
+					.onChange(async (value) => {
+						const numValue = parseInt(value);
+						if (!isNaN(numValue) && numValue >= 1 && numValue <= 100) {
+							this.plugin.settings.topK = numValue;
+							await this.plugin.saveSettings();
+							this.plugin.initializeGeminiService();
+						}
+					});
+			})
+			.addExtraButton((button) => {
+				button
+					.setIcon("reset")
+					.setTooltip("Reset to default (40)")
+					.onClick(async () => {
+						this.plugin.settings.topK = 40;
+						await this.plugin.saveSettings();
+						this.plugin.initializeGeminiService();
+						this.display();
+					});
+			});
+
+		// Top P setting
+		new Setting(containerEl)
+			.setName("Top P")
+			.setDesc("Nucleus sampling threshold (0.0-1.0). Tokens with cumulative probability up to this value are considered.")
+			.addSlider((slider) => {
+				slider
+					.setLimits(0, 1, 0.05)
+					.setValue(this.plugin.settings.topP)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						this.plugin.settings.topP = value;
+						await this.plugin.saveSettings();
+						this.plugin.initializeGeminiService();
+					});
+			})
+			.addExtraButton((button) => {
+				button
+					.setIcon("reset")
+					.setTooltip("Reset to default (0.95)")
+					.onClick(async () => {
+						this.plugin.settings.topP = 0.95;
+						await this.plugin.saveSettings();
+						this.plugin.initializeGeminiService();
+						this.display();
+					});
+			});
+
+		// Max Output Tokens setting
+		new Setting(containerEl)
+			.setName("Max Output Tokens")
+			.setDesc("Maximum number of tokens in the response (100-32768)")
+			.addText((text) => {
+				text
+					.setPlaceholder("8192")
+					.setValue(String(this.plugin.settings.maxOutputTokens))
+					.onChange(async (value) => {
+						const numValue = parseInt(value);
+						if (!isNaN(numValue) && numValue >= 100 && numValue <= 32768) {
+							this.plugin.settings.maxOutputTokens = numValue;
+							await this.plugin.saveSettings();
+							this.plugin.initializeGeminiService();
+						}
+					});
+			})
+			.addExtraButton((button) => {
+				button
+					.setIcon("reset")
+					.setTooltip("Reset to default (8192)")
+					.onClick(async () => {
+						this.plugin.settings.maxOutputTokens = 8192;
+						await this.plugin.saveSettings();
+						this.plugin.initializeGeminiService();
+						this.display();
+					});
 			});
 
 		// Custom Prompts Section
