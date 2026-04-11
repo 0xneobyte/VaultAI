@@ -910,13 +910,17 @@
 	justify-content: flex-end;
 }
 
+.message-action-buttons {
+	display: flex;
+	gap: 4px;
+}
+
 .copy-response-button {
 	background: var(--chat-bot-bg);
 	color: var(--chat-text);
 	border: 1px solid var(--chat-border);
 	padding: 4px 8px;
 	border-radius: 4px;
-	border: none;
 	cursor: pointer;
 	font-size: 12px;
 	transition: opacity 0.2s;
@@ -1133,25 +1137,29 @@
 	position: relative;
 }
 
-/* Copy button */
-.copy-response-button {
+/* Copy button group */
+.message-action-buttons {
 	position: absolute;
 	top: 8px;
 	right: 8px;
+	display: flex;
+	gap: 4px;
+	opacity: 0;
+	transition: opacity 0.2s;
+}
+
+.gemini-message-bot:hover .message-action-buttons {
+	opacity: 1;
+}
+
+.copy-response-button {
 	background: var(--chat-bot-bg);
 	color: var(--chat-text);
 	border: 1px solid var(--chat-border);
 	padding: 4px 8px;
 	border-radius: 4px;
-	border: none;
 	cursor: pointer;
 	font-size: 12px;
-	opacity: 0;
-	transition: opacity 0.2s;
-}
-
-.gemini-message-bot:hover .copy-response-button {
-	opacity: 1;
 }
 
 /* Direct markdown styling */

@@ -631,8 +631,20 @@ export default class GeminiChatbotPlugin extends Plugin {
 		messageEl.addClass(`gemini-message-${message.role}`);
 
 		if (message.role === "bot") {
-			// Add copy button
-			const copyButton = messageEl.createEl("button", {
+			// Button group
+			const actionButtons = messageEl.createEl("div", { cls: "message-action-buttons" });
+
+			const clipboardButton = actionButtons.createEl("button", {
+				text: "Copy",
+				cls: "copy-response-button",
+			});
+			clipboardButton.addEventListener("click", async () => {
+				await navigator.clipboard.writeText(message.content);
+				clipboardButton.textContent = "Copied!";
+				setTimeout(() => { clipboardButton.textContent = "Copy"; }, 2000);
+			});
+
+			const copyButton = actionButtons.createEl("button", {
 				text: "Copy to new note",
 				cls: "copy-response-button",
 			});
@@ -2594,7 +2606,20 @@ ${surroundingLines.join('\n')}
 					messageEl.className = `gemini-message-${message.role}`;
 
 					if (message.role === "bot") {
-						// Add copy button for bot messages
+						// Button group
+						const actionButtons = document.createElement("div");
+						actionButtons.className = "message-action-buttons";
+
+						const clipboardButton = document.createElement("button");
+						clipboardButton.textContent = "Copy";
+						clipboardButton.className = "copy-response-button";
+						clipboardButton.addEventListener("click", async () => {
+							await navigator.clipboard.writeText(message.content);
+							clipboardButton.textContent = "Copied!";
+							setTimeout(() => { clipboardButton.textContent = "Copy"; }, 2000);
+						});
+						actionButtons.appendChild(clipboardButton);
+
 						const copyButton = document.createElement("button");
 						copyButton.textContent = "Copy to new note";
 						copyButton.className = "copy-response-button";
@@ -2614,8 +2639,9 @@ ${surroundingLines.join('\n')}
 								new Notice("Failed to create note");
 							}
 						});
+						actionButtons.appendChild(copyButton);
 
-						messageEl.appendChild(copyButton);
+						messageEl.appendChild(actionButtons);
 
 						// Render markdown for bot messages
 						await MarkdownRenderer.render(
