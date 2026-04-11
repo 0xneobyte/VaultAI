@@ -504,6 +504,8 @@
 	background-color: var(--interactive-accent);
 	color: var(--text-on-accent);
 	border-bottom-right-radius: 4px;
+	user-select: text;
+	-webkit-user-select: text;
 }
 
 .gemini-message-bot {
