@@ -1,4 +1,4 @@
-import { App, Notice, Plugin, PluginSettingTab, Setting, MarkdownView, Editor } from "obsidian";
+import { App, Notice, Plugin, PluginSettingTab, Setting, MarkdownView, Editor, setIcon } from "obsidian";
 import { GeminiService, WebSearchResponse } from "./src/services/GeminiService";
 import { RAGService } from "./src/services/RAGService";
 import { LanguageSelectionModal } from "./src/modals/LanguageSelectionModal";
@@ -631,26 +631,30 @@ export default class GeminiChatbotPlugin extends Plugin {
 		messageEl.addClass(`gemini-message-${message.role}`);
 
 		if (message.role === "bot") {
-			// Add copy button
-			const copyButton = messageEl.createEl("button", {
-				text: "Copy to new note",
-				cls: "copy-response-button",
+			// Render markdown content
+			const contentEl = messageEl.createEl("div", { cls: "message-content" });
+			await MarkdownRenderer.render(this.app, message.content, contentEl, "", this);
+
+			// Action bar below content — always visible
+			const actionBar = messageEl.createEl("div", { cls: "message-action-bar" });
+
+			const clipboardButton = actionBar.createEl("button", { cls: "message-action-btn" });
+			setIcon(clipboardButton, "copy");
+			clipboardButton.addEventListener("click", async () => {
+				await navigator.clipboard.writeText(message.content);
+				setIcon(clipboardButton, "check");
+				setTimeout(() => setIcon(clipboardButton, "copy"), 2000);
 			});
 
-			copyButton.addEventListener("click", async () => {
-				// Generate creative title based on content
+			const noteButton = actionBar.createEl("button", { cls: "message-action-btn" });
+			setIcon(noteButton, "file-plus");
+			noteButton.addEventListener("click", async () => {
 				const title = this.generateNoteTitle(message.content);
-				const file = await this.app.vault.create(
-					`${title}.md`,
-					message.content
-				);
+				const file = await this.app.vault.create(`${title}.md`, message.content);
 				const leaf = this.app.workspace.getLeaf(false);
 				await leaf.openFile(file);
 				new Notice("Response copied to new note!");
 			});
-
-			// Directly render markdown using the correct API
-			await MarkdownRenderer.render(this.app, message.content, messageEl, "", this);
 		} else {
 			// For user messages, just show the visible part
 			const visibleContent = this.stripContextFromMessage(
@@ -1092,7 +1096,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 		// Send button
 		const sendButton = document.createElement("button");
 		sendButton.addClass("send-button");
-		sendButton.textContent = "↑";
+		setIcon(sendButton, "arrow-up");
 
 		// Actions dropdown (prompts, mention, insert)
 		const actionsMenuContainer = document.createElement("div");
@@ -1100,7 +1104,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 		const actionsMenuButton = document.createElement("button");
 		actionsMenuButton.addClass("actions-menu-button");
-		actionsMenuButton.textContent = "✨";
+		setIcon(actionsMenuButton, "sliders-horizontal");
 		actionsMenuButton.title = "Actions";
 
 		const actionsMenuDropdown = document.createElement("div");
@@ -1108,9 +1112,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 		actionsMenuDropdown.style.display = "none";
 
 		const actions = [
-			{ id: "prompts", label: "Custom Prompts", icon: "✨", description: "Use saved prompts" },
-			{ id: "mention", label: "Mention File", icon: "@", description: "Reference a file" },
-			{ id: "insert", label: "Insert Mode", icon: "📍", description: "Insert at cursor" }
+			{ id: "prompts", label: "Custom Prompts", icon: "layout-list", description: "Use saved prompts" },
+			{ id: "mention", label: "Mention File", icon: "at-sign", description: "Reference a file" },
+			{ id: "insert", label: "Insert Mode", icon: "pin", description: "Insert at cursor" }
 		];
 
 		actions.forEach(action => {
@@ -1120,7 +1124,10 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 			const iconSpan = document.createElement("span");
 			iconSpan.addClass("action-icon");
-			iconSpan.textContent = action.icon;
+			setIcon(iconSpan, action.icon);
+
+			const textDiv = document.createElement("div");
+			textDiv.addClass("action-text");
 
 			const labelSpan = document.createElement("span");
 			labelSpan.addClass("action-label");
@@ -1130,9 +1137,10 @@ export default class GeminiChatbotPlugin extends Plugin {
 			descSpan.addClass("action-description");
 			descSpan.textContent = action.description;
 
+			textDiv.appendChild(labelSpan);
+			textDiv.appendChild(descSpan);
 			option.appendChild(iconSpan);
-			option.appendChild(labelSpan);
-			option.appendChild(descSpan);
+			option.appendChild(textDiv);
 			actionsMenuDropdown.appendChild(option);
 		});
 
@@ -1145,7 +1153,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 		const modeButton = document.createElement("button");
 		modeButton.addClass("mode-selector-button");
-		modeButton.textContent = "💬";
+		setIcon(modeButton, "message-circle");
 		modeButton.title = "Select chat mode";
 
 		const modeDropdown = document.createElement("div");
@@ -1153,9 +1161,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 		modeDropdown.style.display = "none";
 
 		const modes = [
-			{ id: "normal", label: "Normal", icon: "💬", description: "Standard chat" },
-			{ id: "rag", label: "RAG", icon: "🧠", description: "Search vault" },
-			{ id: "web", label: "Web Search", icon: "🌐", description: "Search web" }
+			{ id: "normal", label: "Normal", icon: "message-circle", description: "Standard chat" },
+			{ id: "rag", label: "Vault Search", icon: "database", description: "Search your vault" },
+			{ id: "web", label: "Web Search", icon: "globe", description: "Search the web" }
 		];
 
 		modes.forEach(mode => {
@@ -1165,7 +1173,10 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 			const iconSpan = document.createElement("span");
 			iconSpan.addClass("mode-icon");
-			iconSpan.textContent = mode.icon;
+			setIcon(iconSpan, mode.icon);
+
+			const textDiv = document.createElement("div");
+			textDiv.addClass("mode-text");
 
 			const labelSpan = document.createElement("span");
 			labelSpan.addClass("mode-label");
@@ -1175,9 +1186,10 @@ export default class GeminiChatbotPlugin extends Plugin {
 			descSpan.addClass("mode-description");
 			descSpan.textContent = mode.description;
 
+			textDiv.appendChild(labelSpan);
+			textDiv.appendChild(descSpan);
 			option.appendChild(iconSpan);
-			option.appendChild(labelSpan);
-			option.appendChild(descSpan);
+			option.appendChild(textDiv);
 			modeDropdown.appendChild(option);
 		});
 
@@ -1462,6 +1474,11 @@ export default class GeminiChatbotPlugin extends Plugin {
 			DEFAULT_SETTINGS,
 			await this.loadData()
 		);
+		// Migrate deprecated model name for existing users
+		if (this.settings.modelName === "gemini-2.0-flash-exp") {
+			this.settings.modelName = "gemini-2.5-flash";
+			await this.saveSettings();
+		}
 	}
 
 	async saveSettings() {
@@ -1690,12 +1707,12 @@ ${surroundingLines.join('\n')}
 
 		if (insertButton) {
 			if (this.insertMode) {
-				insertButton.textContent = "📍✓";
+				setIcon(insertButton, "pin");
 				insertButton.style.backgroundColor = "var(--interactive-accent)";
 				insertButton.style.color = "var(--text-on-accent)";
 				insertButton.title = "Insert mode ON - AI responses will be inserted at cursor";
 			} else {
-				insertButton.textContent = "📍";
+				setIcon(insertButton, "pin");
 				insertButton.style.backgroundColor = "";
 				insertButton.style.color = "";
 				insertButton.title = "Insert AI response at cursor position";
@@ -1731,21 +1748,21 @@ ${surroundingLines.join('\n')}
 		if (modeButton) {
 			switch (mode) {
 				case "normal":
-					modeButton.textContent = "💬";
+					setIcon(modeButton, "message-circle");
 					modeButton.style.backgroundColor = "";
 					modeButton.style.color = "";
 					modeButton.title = "Mode: Normal";
 					new Notice("Normal mode");
 					break;
 				case "rag":
-					modeButton.textContent = "🧠";
+					setIcon(modeButton, "database");
 					modeButton.style.backgroundColor = "var(--interactive-accent)";
 					modeButton.style.color = "var(--text-on-accent)";
 					modeButton.title = "Mode: RAG (Searching vault)";
 					new Notice("RAG mode ON - Searching entire vault");
 					break;
 				case "web":
-					modeButton.textContent = "🌐";
+					setIcon(modeButton, "globe");
 					modeButton.style.backgroundColor = "var(--interactive-accent)";
 					modeButton.style.color = "var(--text-on-accent)";
 					modeButton.title = "Mode: Web Search";
@@ -2589,37 +2606,40 @@ ${surroundingLines.join('\n')}
 					messageEl.className = `gemini-message-${message.role}`;
 
 					if (message.role === "bot") {
-						// Add copy button for bot messages
-						const copyButton = document.createElement("button");
-						copyButton.textContent = "Copy to new note";
-						copyButton.className = "copy-response-button";
+						const contentEl = document.createElement("div");
+						contentEl.className = "message-content";
+						messageEl.appendChild(contentEl);
+						await MarkdownRenderer.render(this.app, message.content, contentEl, "", this);
 
-						copyButton.addEventListener("click", async () => {
+						const actionBar = document.createElement("div");
+						actionBar.className = "message-action-bar";
+
+						const clipboardButton = document.createElement("button");
+						clipboardButton.className = "message-action-btn";
+						setIcon(clipboardButton, "copy");
+						clipboardButton.addEventListener("click", async () => {
+							await navigator.clipboard.writeText(message.content);
+							setIcon(clipboardButton, "check");
+							setTimeout(() => setIcon(clipboardButton, "copy"), 2000);
+						});
+						actionBar.appendChild(clipboardButton);
+
+						const noteButton = document.createElement("button");
+						noteButton.className = "message-action-btn";
+						setIcon(noteButton, "file-plus");
+						noteButton.addEventListener("click", async () => {
 							try {
 								const title = this.generateNoteTitle(message.content);
-								const file = await this.app.vault.create(
-									`${title}.md`,
-									message.content
-								);
+								const file = await this.app.vault.create(`${title}.md`, message.content);
 								const leaf = this.app.workspace.getLeaf(false);
 								await leaf.openFile(file);
 								new Notice("Response copied to new note!");
 							} catch (error) {
-								console.error("Failed to create note:", error);
 								new Notice("Failed to create note");
 							}
 						});
-
-						messageEl.appendChild(copyButton);
-
-						// Render markdown for bot messages
-						await MarkdownRenderer.render(
-							this.app,
-							message.content,
-							messageEl,
-							"",
-							this
-						);
+						actionBar.appendChild(noteButton);
+						messageEl.appendChild(actionBar);
 					} else {
 						// For user messages, show the visible content
 						const visibleContent = this.stripContextFromMessage(
