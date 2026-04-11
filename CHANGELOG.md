@@ -5,6 +5,27 @@ All notable changes to VaultAI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.11] - 2026-04-11
+
+### UI Improvements
+
+- ChatGPT-style flat layout for AI responses — removed bubble/card styling
+- Copy and Copy-to-note icon buttons always visible below each bot message
+- Text in both AI and user messages is now selectable and copyable
+- Replaced all emoji/text icons with Lucide icons throughout the UI (send, mode selector, actions menu, dropdowns)
+- Actions menu and mode dropdown items now show label with description stacked below
+
+### Bug Fixes
+
+- Fixed default Gemini model from deprecated `gemini-2.0-flash-exp` to `gemini-2.5-flash`
+- Auto-migrates existing users with the old model saved in settings on plugin load
+
+## [1.0.10] - 2026-04-11
+
+### Bug Fixes
+
+- Updated default Gemini model to `gemini-2.5-flash` (previous default `gemini-2.0-flash-exp` was removed from the API)
+
 ## [1.0.9] - 2026-01-31
 
 ### Model Configuration
