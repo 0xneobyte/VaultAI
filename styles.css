@@ -916,18 +916,28 @@
 }
 
 .copy-response-button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
 	background: var(--chat-bot-bg);
-	color: var(--chat-text);
+	color: var(--text-muted);
 	border: 1px solid var(--chat-border);
-	padding: 4px 8px;
 	border-radius: 4px;
 	cursor: pointer;
-	font-size: 12px;
-	transition: opacity 0.2s;
+	padding: 0;
+	transition: color 0.15s, background 0.15s;
 }
 
 .copy-response-button:hover {
-	opacity: 0.9;
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+}
+
+.copy-response-button svg {
+	width: 14px;
+	height: 14px;
 }
 
 .response-content {
@@ -1153,13 +1163,28 @@
 }
 
 .copy-response-button {
-	background: var(--chat-bot-bg);
-	color: var(--chat-text);
-	border: 1px solid var(--chat-border);
-	padding: 4px 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	background: var(--background-primary);
+	color: var(--text-muted);
+	border: 1px solid var(--background-modifier-border);
 	border-radius: 4px;
 	cursor: pointer;
-	font-size: 12px;
+	padding: 0;
+	transition: color 0.15s, background 0.15s;
+}
+
+.copy-response-button:hover {
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+}
+
+.copy-response-button svg {
+	width: 14px;
+	height: 14px;
 }
 
 /* Direct markdown styling */
