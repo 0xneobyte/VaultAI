@@ -1109,7 +1109,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 		const actionsMenuButton = document.createElement("button");
 		actionsMenuButton.addClass("actions-menu-button");
-		setIcon(actionsMenuButton, "sparkles");
+		setIcon(actionsMenuButton, "sliders-horizontal");
 		actionsMenuButton.title = "Actions";
 
 		const actionsMenuDropdown = document.createElement("div");
@@ -1117,7 +1117,7 @@ export default class GeminiChatbotPlugin extends Plugin {
 		actionsMenuDropdown.style.display = "none";
 
 		const actions = [
-			{ id: "prompts", label: "Custom Prompts", icon: "sparkles", description: "Use saved prompts" },
+			{ id: "prompts", label: "Custom Prompts", icon: "layout-list", description: "Use saved prompts" },
 			{ id: "mention", label: "Mention File", icon: "at-sign", description: "Reference a file" },
 			{ id: "insert", label: "Insert Mode", icon: "pin", description: "Insert at cursor" }
 		];
@@ -1131,6 +1131,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 			iconSpan.addClass("action-icon");
 			setIcon(iconSpan, action.icon);
 
+			const textDiv = document.createElement("div");
+			textDiv.addClass("action-text");
+
 			const labelSpan = document.createElement("span");
 			labelSpan.addClass("action-label");
 			labelSpan.textContent = action.label;
@@ -1139,9 +1142,10 @@ export default class GeminiChatbotPlugin extends Plugin {
 			descSpan.addClass("action-description");
 			descSpan.textContent = action.description;
 
+			textDiv.appendChild(labelSpan);
+			textDiv.appendChild(descSpan);
 			option.appendChild(iconSpan);
-			option.appendChild(labelSpan);
-			option.appendChild(descSpan);
+			option.appendChild(textDiv);
 			actionsMenuDropdown.appendChild(option);
 		});
 
@@ -1163,8 +1167,8 @@ export default class GeminiChatbotPlugin extends Plugin {
 
 		const modes = [
 			{ id: "normal", label: "Normal", icon: "message-circle", description: "Standard chat" },
-			{ id: "rag", label: "RAG", icon: "database", description: "Search vault" },
-			{ id: "web", label: "Web Search", icon: "globe", description: "Search web" }
+			{ id: "rag", label: "Vault Search", icon: "database", description: "Search your vault" },
+			{ id: "web", label: "Web Search", icon: "globe", description: "Search the web" }
 		];
 
 		modes.forEach(mode => {
@@ -1176,6 +1180,9 @@ export default class GeminiChatbotPlugin extends Plugin {
 			iconSpan.addClass("mode-icon");
 			setIcon(iconSpan, mode.icon);
 
+			const textDiv = document.createElement("div");
+			textDiv.addClass("mode-text");
+
 			const labelSpan = document.createElement("span");
 			labelSpan.addClass("mode-label");
 			labelSpan.textContent = mode.label;
@@ -1184,9 +1191,10 @@ export default class GeminiChatbotPlugin extends Plugin {
 			descSpan.addClass("mode-description");
 			descSpan.textContent = mode.description;
 
+			textDiv.appendChild(labelSpan);
+			textDiv.appendChild(descSpan);
 			option.appendChild(iconSpan);
-			option.appendChild(labelSpan);
-			option.appendChild(descSpan);
+			option.appendChild(textDiv);
 			modeDropdown.appendChild(option);
 		});
 
