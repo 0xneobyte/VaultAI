@@ -59,7 +59,7 @@ const DEFAULT_SETTINGS: GeminiChatbotSettings = {
 	ragStoreName: null,
 	ragSyncedFiles: {},
 	// Model configuration defaults
-	modelName: "gemini-2.0-flash-exp",
+	modelName: "gemini-2.5-flash",
 	temperature: 1.0,
 	topK: 40,
 	topP: 0.95,
@@ -2930,13 +2930,13 @@ class GeminiChatbotSettingTab extends PluginSettingTab {
 		// Model name setting
 		new Setting(containerEl)
 			.setName("Model Name")
-			.setDesc("The Gemini model to use (e.g., gemini-2.0-flash-exp, gemini-1.5-pro, gemini-1.5-flash)")
+			.setDesc("The Gemini model to use (e.g., gemini-2.5-flash, gemini-2.0-flash, gemini-1.5-pro)")
 			.addText((text) => {
 				text
-					.setPlaceholder("gemini-2.0-flash-exp")
+					.setPlaceholder("gemini-2.5-flash")
 					.setValue(this.plugin.settings.modelName)
 					.onChange(async (value) => {
-						this.plugin.settings.modelName = value || "gemini-2.0-flash-exp";
+						this.plugin.settings.modelName = value || "gemini-2.5-flash";
 						await this.plugin.saveSettings();
 						this.plugin.initializeGeminiService();
 					});

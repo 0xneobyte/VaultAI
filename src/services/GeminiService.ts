@@ -41,7 +41,7 @@ export class GeminiService {
     constructor(apiKey: string, config?: ModelConfig) {
         this.apiKey = apiKey;
         this.config = config || {
-            modelName: "gemini-2.0-flash-exp",
+            modelName: "gemini-2.5-flash",
             temperature: 1.0,
             topK: 40,
             topP: 0.95,
