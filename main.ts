@@ -631,35 +631,30 @@ export default class GeminiChatbotPlugin extends Plugin {
 		messageEl.addClass(`gemini-message-${message.role}`);
 
 		if (message.role === "bot") {
-			// Button group
-			const actionButtons = messageEl.createEl("div", { cls: "message-action-buttons" });
+			// Render markdown content
+			const contentEl = messageEl.createEl("div", { cls: "message-content" });
+			await MarkdownRenderer.render(this.app, message.content, contentEl, "", this);
 
-			const clipboardButton = actionButtons.createEl("button", { cls: "copy-response-button", attr: { "aria-label": "Copy to clipboard" } });
+			// Action bar below content — always visible
+			const actionBar = messageEl.createEl("div", { cls: "message-action-bar" });
+
+			const clipboardButton = actionBar.createEl("button", { cls: "message-action-btn" });
 			setIcon(clipboardButton, "copy");
 			clipboardButton.addEventListener("click", async () => {
 				await navigator.clipboard.writeText(message.content);
 				setIcon(clipboardButton, "check");
-				setTimeout(() => { setIcon(clipboardButton, "copy"); }, 2000);
+				setTimeout(() => setIcon(clipboardButton, "copy"), 2000);
 			});
 
-			const copyButton = actionButtons.createEl("button", { cls: "copy-response-button", attr: { "aria-label": "Copy to new note" } });
-			setIcon(copyButton, "file-plus");
-
-			copyButton.addEventListener("click", async () => {
-				// Generate creative title based on content
+			const noteButton = actionBar.createEl("button", { cls: "message-action-btn" });
+			setIcon(noteButton, "file-plus");
+			noteButton.addEventListener("click", async () => {
 				const title = this.generateNoteTitle(message.content);
-				const file = await this.app.vault.create(
-					`${title}.md`,
-					message.content
-				);
+				const file = await this.app.vault.create(`${title}.md`, message.content);
 				const leaf = this.app.workspace.getLeaf(false);
 				await leaf.openFile(file);
 				new Notice("Response copied to new note!");
 			});
-
-			// Render markdown into a separate div so actionButtons isn't overwritten
-			const contentEl = messageEl.createEl("div", { cls: "message-content" });
-			await MarkdownRenderer.render(this.app, message.content, contentEl, "", this);
 		} else {
 			// For user messages, just show the visible part
 			const visibleContent = this.stripContextFromMessage(
@@ -2611,56 +2606,40 @@ ${surroundingLines.join('\n')}
 					messageEl.className = `gemini-message-${message.role}`;
 
 					if (message.role === "bot") {
-						// Button group
-						const actionButtons = document.createElement("div");
-						actionButtons.className = "message-action-buttons";
+						const contentEl = document.createElement("div");
+						contentEl.className = "message-content";
+						messageEl.appendChild(contentEl);
+						await MarkdownRenderer.render(this.app, message.content, contentEl, "", this);
+
+						const actionBar = document.createElement("div");
+						actionBar.className = "message-action-bar";
 
 						const clipboardButton = document.createElement("button");
-						clipboardButton.className = "copy-response-button";
-						clipboardButton.setAttribute("aria-label", "Copy to clipboard");
+						clipboardButton.className = "message-action-btn";
 						setIcon(clipboardButton, "copy");
 						clipboardButton.addEventListener("click", async () => {
 							await navigator.clipboard.writeText(message.content);
 							setIcon(clipboardButton, "check");
-							setTimeout(() => { setIcon(clipboardButton, "copy"); }, 2000);
+							setTimeout(() => setIcon(clipboardButton, "copy"), 2000);
 						});
-						actionButtons.appendChild(clipboardButton);
+						actionBar.appendChild(clipboardButton);
 
-						const copyButton = document.createElement("button");
-						copyButton.className = "copy-response-button";
-						copyButton.setAttribute("aria-label", "Copy to new note");
-						setIcon(copyButton, "file-plus");
-
-						copyButton.addEventListener("click", async () => {
+						const noteButton = document.createElement("button");
+						noteButton.className = "message-action-btn";
+						setIcon(noteButton, "file-plus");
+						noteButton.addEventListener("click", async () => {
 							try {
 								const title = this.generateNoteTitle(message.content);
-								const file = await this.app.vault.create(
-									`${title}.md`,
-									message.content
-								);
+								const file = await this.app.vault.create(`${title}.md`, message.content);
 								const leaf = this.app.workspace.getLeaf(false);
 								await leaf.openFile(file);
 								new Notice("Response copied to new note!");
 							} catch (error) {
-								console.error("Failed to create note:", error);
 								new Notice("Failed to create note");
 							}
 						});
-						actionButtons.appendChild(copyButton);
-
-						messageEl.appendChild(actionButtons);
-
-						// Render markdown into a separate div so actionButtons isn't overwritten
-						const contentEl = document.createElement("div");
-						contentEl.className = "message-content";
-						messageEl.appendChild(contentEl);
-						await MarkdownRenderer.render(
-							this.app,
-							message.content,
-							contentEl,
-							"",
-							this
-						);
+						actionBar.appendChild(noteButton);
+						messageEl.appendChild(actionBar);
 					} else {
 						// For user messages, show the visible content
 						const visibleContent = this.stripContextFromMessage(

@@ -508,9 +508,9 @@
 
 .gemini-message-bot {
 	width: 100%;
-	background: var(--chat-bot-bg);
-	border: 1px solid var(--chat-border);
-	padding: 16px;
+	background: none;
+	border: none;
+	padding: 8px 0;
 	position: relative;
 	flex-shrink: 0;
 	min-height: min-content;
@@ -933,10 +933,9 @@
 
 /* Response Formatting */
 .gemini-message-bot {
-	background: var(--chat-bot-bg);
-	border: 1px solid var(--chat-border);
-	border-radius: 8px;
-	overflow: hidden;
+	background: none;
+	border: none;
+	border-radius: 0;
 }
 
 .response-header {
@@ -945,36 +944,6 @@
 	border-bottom: 1px solid var(--background-modifier-border);
 	display: flex;
 	justify-content: flex-end;
-}
-
-.message-action-buttons {
-	display: flex;
-	gap: 4px;
-}
-
-.copy-response-button {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 26px;
-	height: 26px;
-	background: var(--chat-bot-bg);
-	color: var(--text-muted);
-	border: 1px solid var(--chat-border);
-	border-radius: 4px;
-	cursor: pointer;
-	padding: 0;
-	transition: color 0.15s, background 0.15s;
-}
-
-.copy-response-button:hover {
-	color: var(--text-normal);
-	background: var(--background-modifier-hover);
-}
-
-.copy-response-button svg {
-	width: 14px;
-	height: 14px;
 }
 
 .response-content {
@@ -1026,26 +995,6 @@
 	color: var(--text-muted);
 }
 
-/* Copy button styling */
-.copy-response-button {
-	position: absolute;
-	top: 8px;
-	right: 8px;
-	background: var(--chat-bot-bg);
-	color: var(--chat-text);
-	border: 1px solid var(--chat-border);
-	padding: 4px 8px;
-	border-radius: 4px;
-	border: none;
-	cursor: pointer;
-	font-size: 12px;
-	opacity: 0;
-	transition: opacity 0.2s;
-}
-
-.gemini-message-bot:hover .copy-response-button {
-	opacity: 1;
-}
 
 /* Direct markdown content styling */
 .gemini-message-bot h1,
@@ -1173,55 +1122,48 @@
 	background: var(--background-secondary);
 }
 
-/* Bot message styling */
+/* Bot message styling — no bubble, flat like ChatGPT */
 .gemini-message-bot {
 	width: 100%;
-	background: var(--chat-bot-bg);
-	border: 1px solid var(--chat-border);
-	border-radius: 12px;
-	margin: 8px 0;
-	padding: 16px;
+	background: none;
+	border: none;
+	border-radius: 0;
+	margin: 4px 0;
+	padding: 8px 0;
 	position: relative;
 }
 
-/* Copy button group */
-.message-action-buttons {
-	position: absolute;
-	top: 8px;
-	right: 8px;
+
+/* Action bar below bot messages — always visible, ChatGPT style */
+.message-action-bar {
 	display: flex;
-	gap: 4px;
-	opacity: 0;
-	transition: opacity 0.2s;
+	gap: 2px;
+	margin-top: 8px;
 }
 
-.gemini-message-bot:hover .message-action-buttons {
-	opacity: 1;
-}
-
-.copy-response-button {
+.message-action-btn {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 26px;
-	height: 26px;
-	background: var(--background-primary);
-	color: var(--text-muted);
-	border: 1px solid var(--background-modifier-border);
+	width: 24px;
+	height: 24px;
+	background: none;
+	color: var(--text-faint);
+	border: none;
 	border-radius: 4px;
 	cursor: pointer;
 	padding: 0;
-	transition: color 0.15s, background 0.15s;
+	transition: color 0.15s;
 }
 
-.copy-response-button:hover {
+.message-action-btn:hover {
 	color: var(--text-normal);
-	background: var(--background-modifier-hover);
+	background: none;
 }
 
-.copy-response-button svg {
-	width: 14px;
-	height: 14px;
+.message-action-btn svg {
+	width: 15px;
+	height: 15px;
 }
 
 /* Direct markdown styling */
