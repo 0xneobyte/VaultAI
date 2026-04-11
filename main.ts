@@ -1462,6 +1462,11 @@ export default class GeminiChatbotPlugin extends Plugin {
 			DEFAULT_SETTINGS,
 			await this.loadData()
 		);
+		// Migrate deprecated model name for existing users
+		if (this.settings.modelName === "gemini-2.0-flash-exp") {
+			this.settings.modelName = "gemini-2.5-flash";
+			await this.saveSettings();
+		}
 	}
 
 	async saveSettings() {
